@@ -4,6 +4,7 @@
 - Started as Node.js (240 lines), ported to Rust (~300 lines)
 - Node.js version preserved at git tag `node.js-eol`
 - First Rust release: v0.1.0
+- v0.1.1: auto-enable pane borders per-window, sudo fallback in install, uninstall.sh, MCP name renamed from "agent-bus" to "tmux-agent-bus"
 
 ## Key Design Decisions
 
@@ -44,6 +45,7 @@ src/main.rs             # Everything: MCP server, registration, tools
 tools.json              # Tool definitions (embedded via include_str!)
 MCP_INSTRUCTIONS.md     # Agent instructions (embedded via include_str!)
 install.sh              # Download binary + configure MCP clients
+uninstall.sh            # Full cleanup: binaries, PATH, MCP configs, old Node.js version, data
 bump-version.sh         # Semantic version bump in Cargo.toml
 .github/workflows/      # Release CI: 4 targets on tag push
 www/index.html           # Homepage (Vercel)
@@ -53,5 +55,11 @@ context/                # This folder — dev notes
 
 ## Deployment
 - **Binary releases**: Push `v*` tag → GitHub Actions builds macOS (arm64/x64) + Linux (x64/arm64)
+- **Release process**: Bump version in Cargo.toml, commit, `git tag v<version> && git push origin v<version>`
 - **Homepage**: Vercel auto-deploys from main, or `vercel --prod` manually
 - **Install**: `curl -fsSL https://raw.githubusercontent.com/kilospark/tmux-agent-bus/main/install.sh | sh`
+- **Uninstall**: `curl -fsSL https://raw.githubusercontent.com/kilospark/tmux-agent-bus/main/uninstall.sh | sh`
+
+## MCP Server Name
+- Registered as `tmux-agent-bus` in all MCP clients (was `agent-bus` in early versions)
+- Uninstall script cleans up both old and new names
