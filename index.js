@@ -121,9 +121,9 @@ if (myChannel) {
     execSync(`tmux select-pane -t ${JSON.stringify(myPane)} -T ${JSON.stringify(myName)}`, { timeout: 2000 });
   } catch {}
 
-  console.error(`agent-bus: registered as "${myName}" on channel "${myChannel}" (pane ${myPane})`);
+  console.error(`tmux-agent-bus: registered as "${myName}" on channel "${myChannel}" (pane ${myPane})`);
 } else {
-  console.error("agent-bus: WARNING — not inside tmux, registration skipped");
+  console.error("tmux-agent-bus: WARNING — not inside tmux, registration skipped");
 }
 
 // Build instructions with this agent's identity baked in
@@ -131,7 +131,7 @@ const INSTRUCTIONS = readFileSync(join(__dirname, "MCP_INSTRUCTIONS.md"), "utf-8
   + `\n\n## Your Identity\n\nYou are registered as **${myName}** on channel **${myChannel}**. Use "${myName}" when others need to message you. You do not need to register — it happened automatically.\n`;
 
 const server = new McpServer({
-  name: "agent-bus",
+  name: "tmux-agent-bus",
   version: "0.5.0",
 }, {
   instructions: INSTRUCTIONS,
@@ -221,7 +221,7 @@ function cleanup() {
       const channelData = loadChannel(myChannel);
       delete channelData.agents[myName];
       saveChannel(myChannel, channelData);
-      console.error(`agent-bus: unregistered "${myName}" from channel "${myChannel}"`);
+      console.error(`tmux-agent-bus: unregistered "${myName}" from channel "${myChannel}"`);
     } catch {}
   }
 }

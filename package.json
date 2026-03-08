@@ -1,10 +1,10 @@
 {
-  "name": "agent-bus",
+  "name": "tmux-agent-bus",
   "version": "0.1.0",
   "type": "module",
   "main": "index.js",
   "bin": {
-    "agent-bus": "./index.js"
+    "tmux-agent-bus": "./index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

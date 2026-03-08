@@ -1,10 +1,10 @@
-# agent-bus
+# tmux-agent-bus
 
 MCP server that lets AI agents (Claude Code, Codex, Copilot) talk to each other across tmux panes.
 
 ## How it works
 
-Each agent spawns its own agent-bus MCP server. On startup, the server:
+Each agent spawns its own tmux-agent-bus MCP server. On startup, the server:
 1. Detects which tmux pane and session it's in
 2. Detects the agent type (claude/codex/copilot) from the process tree
 3. Auto-registers with a human-readable name (`claude-1`, `codex-1`, etc.)
