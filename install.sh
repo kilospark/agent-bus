@@ -50,13 +50,13 @@ mkdir -p "$INSTALL_DIR"
 
 if [ -w "$INSTALL_DIR" ]; then
   mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}"
-elif [ -e /dev/tty ]; then
-  echo "Need admin access to install to ${INSTALL_DIR}."
+elif [ -e /dev/tty ] && sudo -v < /dev/tty 2>/dev/null; then
   sudo mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}" < /dev/tty
 else
   INSTALL_DIR="$HOME/.local/bin"
   mkdir -p "$INSTALL_DIR"
   mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}"
+  echo "No admin access — installing to ${INSTALL_DIR} instead."
 fi
 
 chmod +x "${INSTALL_DIR}/${BINARY}"
