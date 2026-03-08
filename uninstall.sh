@@ -40,9 +40,31 @@ for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
   if [ -f "$rc" ]; then
     for marker in "# Added by tmux-agent-bus installer" "# Added by agent-bus installer"; do
       if grep -q "$marker" "$rc" 2>/dev/null; then
-        sed -i.bak "/$marker/,+1d" "$rc" 2>/dev/null || \
-          sed -i '' "/$marker/{N;d;}" "$rc"
-        rm -f "${rc}.bak"
+        # Installer adds 3 lines: blank line, comment, export PATH=...
+        if command -v python3 >/dev/null 2>&1; then
+          python3 -c "
+import sys
+p, m = sys.argv[1], sys.argv[2]
+with open(p) as f:
+    lines = f.readlines()
+out, i = [], 0
+while i < len(lines):
+    if m in lines[i]:
+        # Remove this line + next (export), and preceding blank line
+        if out and out[-1].strip() == '':
+            out.pop()
+        i += 2
+    else:
+        out.append(lines[i])
+        i += 1
+with open(p, 'w') as f:
+    f.writelines(out)
+" "$rc" "$marker"
+        else
+          sed -i.bak "/$marker/{N;d;}" "$rc" 2>/dev/null || \
+            sed -i '' "/$marker/{N;d;}" "$rc"
+          rm -f "${rc}.bak"
+        fi
         echo "Removed PATH entry ($marker) from $rc"
         REMOVED="${REMOVED}PATH, "
       fi
