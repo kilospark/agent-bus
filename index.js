@@ -122,8 +122,6 @@ if (myChannel) {
   } catch {}
 
   console.error(`tmux-agent-bus: registered as "${myName}" on channel "${myChannel}" (pane ${myPane})`);
-} else {
-  console.error("tmux-agent-bus: WARNING — not inside tmux, registration skipped");
 }
 
 // Build instructions with this agent's identity baked in
