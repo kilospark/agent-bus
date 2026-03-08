@@ -145,10 +145,21 @@ fn parent_pid(pid: u32) -> Option<u32> {
         })
 }
 
-fn send_to_pane(pane: &str, message: &str) -> Result<()> {
+fn capture_pane(pane: &str) -> String {
+    Command::new("tmux")
+        .args(["capture-pane", "-t", pane, "-p"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+        .unwrap_or_default()
+}
+
+fn send_to_pane(pane: &str, message: &str) -> Result<bool> {
     let sanitized: String = message.split_whitespace().collect::<Vec<_>>().join(" ");
-    // Single tmux invocation with \; to chain: send literal text, then Enter key
-    // This avoids the race condition of two separate tmux calls
+
+    // Snapshot pane content before sending
+    let before = capture_pane(pane);
+
+    // Single tmux invocation with ; to chain: send literal text, then Enter key
     let status = Command::new("tmux")
         .args([
             "send-keys", "-t", pane, "-l", &sanitized, ";",
@@ -159,7 +170,19 @@ fn send_to_pane(pane: &str, message: &str) -> Result<()> {
     if !status.success() {
         anyhow::bail!("tmux send-keys failed");
     }
-    Ok(())
+
+    // Poll for ack: check that pane content changed (message appeared)
+    // Try a few times with short sleeps
+    for _ in 0..6 {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        let after = capture_pane(pane);
+        if after != before {
+            return Ok(true);
+        }
+    }
+
+    // Content didn't change — message may be stuck in input buffer
+    Ok(false)
 }
 
 struct AgentState {
@@ -267,7 +290,8 @@ fn handle_signal_done(state: &AgentState, args: &Value) -> Value {
                 "from": my_name, "to": next, "summary": summary, "request": request
             }));
             match send_to_pane(pane, &message) {
-                Ok(_) => ok_result(&format!("Handed off to {next} (pane {pane}).")),
+                Ok(true) => ok_result(&format!("Handed off to {next} (pane {pane}). Ack: message received.")),
+                Ok(false) => err_result(&format!("Message sent to {next} (pane {pane}) but no ack — Enter may not have been pressed. Try again or check the pane.")),
                 Err(e) => err_result(&format!("Failed to reach {next}: {e}")),
             }
         }
@@ -296,7 +320,8 @@ fn handle_send_message(state: &AgentState, args: &Value) -> Value {
                 "from": my_name, "to": to, "message": message
             }));
             match send_to_pane(pane, &full_message) {
-                Ok(_) => ok_result(&format!("Message sent to {to} (pane {pane}).")),
+                Ok(true) => ok_result(&format!("Message sent to {to} (pane {pane}). Ack: message received.")),
+                Ok(false) => err_result(&format!("Message sent to {to} (pane {pane}) but no ack — Enter may not have been pressed. Try again or check the pane.")),
                 Err(e) => err_result(&format!("Failed to reach {to}: {e}")),
             }
         }
