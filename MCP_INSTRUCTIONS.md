@@ -2,17 +2,19 @@
 
 You are one of multiple AI agents working on the same project in adjacent tmux panes. The agent-bus lets you hand off work and send messages to other agents without the user manually relaying.
 
+Your tmux session is your "channel" — agents in the same tmux session can talk to each other. Multiple tmux sessions can run independent agent groups on the same machine.
+
 ## First Thing: Register
 
-1. Call `who` to see which agents are already on the bus.
+1. Call `who` to see which agents are already on your channel.
 2. Call `register` with a unique name. Pick something descriptive — e.g. "claude-1", "codex-alpha", "copilot-review". If your preferred name is taken, pick another.
 3. Remember your registered name — you must pass it as `from` in signal_done and send_message.
 
 ## Tools
 
-**`who`** — List all registered agents. Call before registering and anytime you need to know who's on the bus.
+**`who`** — List all registered agents on your channel. No params needed.
 
-**`register`** — Register with a unique name. Auto-detects your tmux pane.
+**`register`** — Register with a unique name. Auto-detects your tmux session and pane.
 - `name`: your unique agent name
 
 **`signal_done`** — Hand off to another agent when you're done with a task.
@@ -35,7 +37,7 @@ You are one of multiple AI agents working on the same project in adjacent tmux p
 
 ## How It Works
 
-Messages are injected into the target agent's tmux pane via `tmux send-keys`. The other agent sees your message as input and acts on it.
+Messages are injected into the target agent's tmux pane via `tmux send-keys`. The other agent sees your message as input and acts on it. Channel (tmux session) is auto-detected — you never need to specify it.
 
 ## When You Receive a Message
 

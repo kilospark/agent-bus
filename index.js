@@ -19,7 +19,7 @@ const LOG_PATH = join(BUS_DIR, "history.jsonl");
 function loadConfig() {
   mkdirSync(BUS_DIR, { recursive: true });
   if (!existsSync(CONFIG_PATH)) {
-    writeFileSync(CONFIG_PATH, JSON.stringify({ agents: {} }, null, 2) + "\n");
+    writeFileSync(CONFIG_PATH, JSON.stringify({ channels: {} }, null, 2) + "\n");
   }
   return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 }
@@ -28,17 +28,18 @@ function saveConfig(config) {
   writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
 }
 
+// Returns { session, pane } — detected once at startup since process tree is stable
 function detectPane() {
   try {
     const paneList = execSync(
-      "tmux list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}'",
+      "tmux list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index} #{session_name}'",
       { timeout: 3000 }
     ).toString().trim().split("\n");
 
     const paneMap = {};
     for (const line of paneList) {
-      const [pid, paneId] = line.split(" ");
-      paneMap[pid] = paneId;
+      const parts = line.split(" ");
+      paneMap[parts[0]] = { pane: parts[1], session: parts[2] };
     }
 
     let pid = process.pid;
@@ -54,9 +55,7 @@ function detectPane() {
         break;
       }
     }
-  } catch {
-    // tmux not running or ps failed
-  }
+  } catch {}
   return null;
 }
 
@@ -76,59 +75,77 @@ function logHandoff(record) {
   appendFileSync(LOG_PATH, entry + "\n");
 }
 
-function getAgents() {
-  return loadConfig().agents || {};
+function getChannel(channel) {
+  const config = loadConfig();
+  return config.channels?.[channel]?.agents || {};
+}
+
+// Detect once at startup — stable for lifetime of this MCP server instance
+const myLocation = detectPane();
+const myChannel = myLocation?.session || null;
+const myPane = myLocation?.pane || null;
+
+if (myChannel) {
+  console.error(`agent-bus: detected channel "${myChannel}" pane ${myPane}`);
+} else {
+  console.error("agent-bus: WARNING — could not detect tmux pane");
 }
 
 const server = new McpServer({
   name: "agent-bus",
-  version: "0.3.0",
+  version: "0.4.0",
 }, {
   instructions: INSTRUCTIONS,
 });
 
 server.tool(
   "who",
-  "List all agents currently registered on the bus. Call this before registering to see what names are taken.",
+  "List all agents registered on your channel (tmux session). No parameters needed — channel is auto-detected.",
   {},
   async () => {
-    const agents = getAgents();
+    if (!myChannel) {
+      return { content: [{ type: "text", text: "Not running inside tmux — cannot detect channel." }], isError: true };
+    }
+    const agents = getChannel(myChannel);
     const names = Object.keys(agents);
     if (names.length === 0) {
-      return { content: [{ type: "text", text: "No agents registered yet. Be the first — call register." }] };
+      return { content: [{ type: "text", text: `No agents on channel "${myChannel}" yet. Be the first — call register.` }] };
     }
     const lines = names.map((n) => `- ${n} (pane ${agents[n].pane})`).join("\n");
-    return { content: [{ type: "text", text: `Registered agents:\n${lines}` }] };
+    return { content: [{ type: "text", text: `Channel "${myChannel}" agents:\n${lines}` }] };
   }
 );
 
 server.tool(
   "register",
-  "Register this agent with the bus. Call this once at the start of a session. Pick a unique name — call 'who' first to see what's taken. The bus auto-detects your tmux pane.",
+  "Register this agent with the bus. Auto-detects your tmux session (channel) and pane. Pick a unique name — call 'who' first to see what's taken.",
   {
-    name: z.string().describe("Your unique agent name, e.g. 'claude-1', 'codex-alpha'. Must be unique on the bus."),
+    name: z.string().describe("Your unique agent name, e.g. 'claude-1', 'codex-alpha'. Must be unique on the channel."),
   },
   async ({ name }) => {
-    const pane = detectPane();
-    if (!pane) {
-      return { content: [{ type: "text", text: "Failed to detect tmux pane. Are you running inside tmux?" }], isError: true };
+    if (!myChannel) {
+      return { content: [{ type: "text", text: "Not running inside tmux — cannot detect channel/pane." }], isError: true };
     }
     const config = loadConfig();
-    if (config.agents[name] && config.agents[name].pane !== pane) {
-      return { content: [{ type: "text", text: `Name "${name}" is already taken by pane ${config.agents[name].pane}. Pick a different name. Call 'who' to see registered agents.` }], isError: true };
+    if (!config.channels) config.channels = {};
+    if (!config.channels[myChannel]) config.channels[myChannel] = { agents: {} };
+    const channelAgents = config.channels[myChannel].agents;
+
+    if (channelAgents[name] && channelAgents[name].pane !== myPane) {
+      return { content: [{ type: "text", text: `Name "${name}" is already taken by pane ${channelAgents[name].pane} on channel "${myChannel}". Pick a different name.` }], isError: true };
     }
-    config.agents[name] = { pane };
+    channelAgents[name] = { pane: myPane };
     saveConfig(config);
-    const others = Object.keys(config.agents).filter((k) => k !== name);
+    const others = Object.keys(channelAgents).filter((k) => k !== name);
     return {
-      content: [{ type: "text", text: `Registered as "${name}" on tmux pane ${pane}. Other agents on bus: ${others.length ? others.join(", ") : "none yet"}.` }],
+      content: [{ type: "text", text: `Registered as "${name}" on channel "${myChannel}" (pane ${myPane}). Other agents: ${others.length ? others.join(", ") : "none yet"}.` }],
     };
   }
 );
 
 server.tool(
   "signal_done",
-  "Signal that you are done with your task and hand off to another agent. This injects a message into the other agent's tmux pane with your summary and request.",
+  "Signal that you are done with your task and hand off to another agent on your channel.",
   {
     from: z.string().describe("Your registered agent name"),
     next: z.string().describe("Which agent should go next"),
@@ -136,44 +153,50 @@ server.tool(
     request: z.string().describe("What you need the next agent to do"),
   },
   async ({ from, next, summary, request }) => {
-    const agents = getAgents();
+    if (!myChannel) {
+      return { content: [{ type: "text", text: "Not running inside tmux." }], isError: true };
+    }
+    const agents = getChannel(myChannel);
     const pane = agents[next]?.pane;
     if (!pane) {
       const available = Object.keys(agents);
-      return { content: [{ type: "text", text: `Unknown agent: "${next}". Registered agents: ${available.length ? available.join(", ") : "none — agents must call register first"}.` }], isError: true };
+      return { content: [{ type: "text", text: `Unknown agent "${next}" on channel "${myChannel}". Registered: ${available.length ? available.join(", ") : "none"}.` }], isError: true };
     }
     const message = `[from ${from}]: ${summary} Request: ${request}`;
     const result = sendToPane(pane, message);
-    logHandoff({ type: "signal_done", from, to: next, summary, request });
+    logHandoff({ type: "signal_done", channel: myChannel, from, to: next, summary, request });
     if (!result.success) {
       return { content: [{ type: "text", text: `Failed to reach ${next}: ${result.error}` }], isError: true };
     }
-    return { content: [{ type: "text", text: `Handed off to ${next}. Message delivered to tmux pane ${pane}.` }] };
+    return { content: [{ type: "text", text: `Handed off to ${next} on channel "${myChannel}" (pane ${pane}).` }] };
   }
 );
 
 server.tool(
   "send_message",
-  "Send a message to another agent without handing off. Use for mid-task questions or FYIs.",
+  "Send a message to another agent on your channel without handing off. Use for mid-task questions or FYIs.",
   {
     from: z.string().describe("Your registered agent name"),
     to: z.string().describe("Which agent to message"),
     message: z.string().describe("The message to send"),
   },
   async ({ from, to, message }) => {
-    const agents = getAgents();
+    if (!myChannel) {
+      return { content: [{ type: "text", text: "Not running inside tmux." }], isError: true };
+    }
+    const agents = getChannel(myChannel);
     const pane = agents[to]?.pane;
     if (!pane) {
       const available = Object.keys(agents);
-      return { content: [{ type: "text", text: `Unknown agent: "${to}". Registered agents: ${available.length ? available.join(", ") : "none — agents must call register first"}.` }], isError: true };
+      return { content: [{ type: "text", text: `Unknown agent "${to}" on channel "${myChannel}". Registered: ${available.length ? available.join(", ") : "none"}.` }], isError: true };
     }
     const fullMessage = `[message from ${from}]: ${message}`;
     const result = sendToPane(pane, fullMessage);
-    logHandoff({ type: "send_message", from, to, message });
+    logHandoff({ type: "send_message", channel: myChannel, from, to, message });
     if (!result.success) {
       return { content: [{ type: "text", text: `Failed to reach ${to}: ${result.error}` }], isError: true };
     }
-    return { content: [{ type: "text", text: `Message sent to ${to} in tmux pane ${pane}.` }] };
+    return { content: [{ type: "text", text: `Message sent to ${to} on channel "${myChannel}" (pane ${pane}).` }] };
   }
 );
 
