@@ -30,7 +30,9 @@ function loadConfig() {
 
 function sendToPane(pane, message) {
   try {
-    execSync(`tmux send-keys -t ${JSON.stringify(pane)} -l ${JSON.stringify(message)}`, { timeout: 5000 });
+    // Replace newlines with spaces to avoid TUI input issues
+    const sanitized = message.replace(/\n+/g, " ").trim();
+    execSync(`tmux send-keys -t ${JSON.stringify(pane)} -l ${JSON.stringify(sanitized)}`, { timeout: 5000 });
     execSync(`tmux send-keys -t ${JSON.stringify(pane)} Enter`, { timeout: 5000 });
     return { success: true };
   } catch (err) {
