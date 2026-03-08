@@ -7,8 +7,8 @@ set -e
 TYPE=${1:-patch}
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Read current version from rust/Cargo.toml
-CURRENT=$(grep '^version' "$DIR/rust/Cargo.toml" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+# Read current version from Cargo.toml
+CURRENT=$(grep '^version' "$DIR/Cargo.toml" | head -1 | sed 's/.*"\(.*\)".*/\1/')
 
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
 
@@ -21,8 +21,6 @@ esac
 
 NEW="${MAJOR}.${MINOR}.${PATCH}"
 
-# Update version files
-sed -i '' "s/^version = \".*\"/version = \"$NEW\"/" "$DIR/rust/Cargo.toml"
-sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW\"/" "$DIR/package.json"
+sed -i '' "s/^version = \".*\"/version = \"$NEW\"/" "$DIR/Cargo.toml"
 
 echo "$CURRENT -> $NEW"

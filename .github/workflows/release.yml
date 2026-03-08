@@ -45,11 +45,11 @@ jobs:
           echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} --manifest-path rust/Cargo.toml
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package
         run: |
-          cp rust/target/${{ matrix.target }}/release/tmux-agent-bus ${{ matrix.name }}
+          cp target/${{ matrix.target }}/release/tmux-agent-bus ${{ matrix.name }}
           chmod +x ${{ matrix.name }}
           tar czf ${{ matrix.name }}.tar.gz ${{ matrix.name }}
 

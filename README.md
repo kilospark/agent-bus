@@ -16,12 +16,10 @@ Agents communicate by calling `signal_done` or `send_message`, which injects tex
 ## Install
 
 ```bash
-# Claude Code
-claude mcp add -s user agent-bus node /path/to/agent-bus/index.js
-
-# Codex
-codex mcp add agent-bus -- node /path/to/agent-bus/index.js
+curl -fsSL https://raw.githubusercontent.com/kilospark/tmux-agent-bus/main/install.sh | sh
 ```
+
+This downloads a single binary, adds it to your PATH, and auto-configures any detected MCP clients (Claude Code, Codex, Claude Desktop, Cursor, etc.).
 
 ## tmux setup
 

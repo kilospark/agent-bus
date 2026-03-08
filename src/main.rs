@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
 const TOOLS_JSON: &str = include_str!("../tools.json");
-const MCP_INSTRUCTIONS: &str = include_str!("../../MCP_INSTRUCTIONS.md");
+const MCP_INSTRUCTIONS: &str = include_str!("../MCP_INSTRUCTIONS.md");
 
 fn bus_dir() -> std::path::PathBuf {
     dirs::home_dir().unwrap_or_default().join(".agent-bus")
