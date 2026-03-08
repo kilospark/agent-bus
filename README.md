@@ -23,14 +23,9 @@ This downloads a single binary, adds it to your PATH, and auto-configures any de
 
 ## tmux setup
 
-Show agent names in pane borders (uses a custom pane option since Claude Code overwrites `pane_title`):
+Pane borders are enabled automatically when an agent registers. The server sets `pane-border-status` and `pane-border-format` on the current window if not already configured.
 
-```bash
-tmux set -g pane-border-format " #{@agent-name} | #{pane_title} "
-tmux set -g pane-border-status top
-```
-
-Add to `~/.tmux.conf` to persist:
+To set your own format globally, add to `~/.tmux.conf`:
 
 ```
 set -g pane-border-format " #{@agent-name} | #{pane_title} "

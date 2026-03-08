@@ -239,6 +239,22 @@ fn register() -> AgentState {
         .args(["set-option", "-p", "-t", &pane, "@agent-name", &name])
         .status();
 
+    // Enable pane borders for this window if not already on
+    let border_status = Command::new("tmux")
+        .args(["show-option", "-wv", "-t", &pane, "pane-border-status"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .unwrap_or_default();
+    if border_status.trim().is_empty() || border_status.trim() == "off" {
+        let _ = Command::new("tmux")
+            .args(["set-option", "-w", "-t", &pane, "pane-border-format", " #{@agent-name} | #{pane_title} "])
+            .status();
+        let _ = Command::new("tmux")
+            .args(["set-option", "-w", "-t", &pane, "pane-border-status", "top"])
+            .status();
+    }
+
     eprintln!("tmux-agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
 
     AgentState {
