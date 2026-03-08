@@ -39,7 +39,7 @@ done
 
 # --- Remove MCP client configs ---
 
-# Remove from JSON config files (delete the "agent-bus": { ... } entry)
+# Remove from JSON config files (delete the "tmux-agent-bus": { ... } entry)
 remove_mcp_config() {
   config_file="$1"
   client_name="$2"
@@ -48,14 +48,14 @@ remove_mcp_config() {
     return
   fi
 
-  if ! grep -q '"agent-bus"' "$config_file" 2>/dev/null; then
+  if ! grep -q '"tmux-agent-bus"' "$config_file" 2>/dev/null; then
     return
   fi
 
-  # Remove "agent-bus": { "command": "..." }, or "agent-bus": { "command": "..." }
+  # Remove "tmux-agent-bus": { "command": "..." }, or "tmux-agent-bus": { "command": "..." }
   # Handle both with and without trailing comma
-  sed -i.bak 's/"agent-bus"[[:space:]]*:[[:space:]]*{[^}]*}[[:space:]]*,\?//g' "$config_file" 2>/dev/null || \
-    sed -i '' 's/"agent-bus"[[:space:]]*:[[:space:]]*\{[^}]*\}[[:space:]]*,\{0,1\}//g' "$config_file"
+  sed -i.bak 's/"tmux-agent-bus"[[:space:]]*:[[:space:]]*{[^}]*}[[:space:]]*,\?//g' "$config_file" 2>/dev/null || \
+    sed -i '' 's/"tmux-agent-bus"[[:space:]]*:[[:space:]]*\{[^}]*\}[[:space:]]*,\{0,1\}//g' "$config_file"
   rm -f "${config_file}.bak"
   echo "  $client_name: removed"
   REMOVED="${REMOVED}${client_name}, "
@@ -63,11 +63,11 @@ remove_mcp_config() {
 
 # Claude Code
 if command -v claude >/dev/null 2>&1; then
-  if claude mcp get agent-bus >/dev/null 2>&1; then
-    claude mcp remove agent-bus 2>/dev/null && {
+  if claude mcp get tmux-agent-bus >/dev/null 2>&1; then
+    claude mcp remove tmux-agent-bus 2>/dev/null && {
       echo "  Claude Code: removed"
       REMOVED="${REMOVED}Claude Code, "
-    } || echo "  Claude Code: failed to remove (try: claude mcp remove agent-bus)"
+    } || echo "  Claude Code: failed to remove (try: claude mcp remove tmux-agent-bus)"
   fi
 fi
 
@@ -104,11 +104,11 @@ fi
 
 # Codex
 if command -v codex >/dev/null 2>&1; then
-  if codex mcp list 2>/dev/null | grep -q 'agent-bus'; then
-    codex mcp remove agent-bus 2>/dev/null && {
+  if codex mcp list 2>/dev/null | grep -q 'tmux-agent-bus'; then
+    codex mcp remove tmux-agent-bus 2>/dev/null && {
       echo "  Codex: removed"
       REMOVED="${REMOVED}Codex, "
-    } || echo "  Codex: failed to remove (try: codex mcp remove agent-bus)"
+    } || echo "  Codex: failed to remove (try: codex mcp remove tmux-agent-bus)"
   fi
 fi
 

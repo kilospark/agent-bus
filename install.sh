@@ -114,7 +114,7 @@ esac
 BINARY_PATH="${INSTALL_DIR}/${BINARY}"
 CONFIGURED=""
 
-# Add agent-bus to an MCP config file
+# Add tmux-agent-bus to an MCP config file
 # Usage: add_mcp_config <config_file> <client_name>
 add_mcp_config() {
   config_file="$1"
@@ -124,7 +124,7 @@ add_mcp_config() {
     return
   fi
 
-  if grep -q '"agent-bus"' "$config_file" 2>/dev/null; then
+  if grep -q '"tmux-agent-bus"' "$config_file" 2>/dev/null; then
     echo "  $client_name: already configured"
     CONFIGURED="${CONFIGURED}${client_name}, "
     return
@@ -135,9 +135,9 @@ add_mcp_config() {
   escaped_path="$(echo "$BINARY_PATH" | sed 's/[\/&]/\\&/g')"
 
   if echo "$content" | grep -q '"mcpServers"'; then
-    updated="$(echo "$content" | sed 's/"mcpServers"[[:space:]]*:[[:space:]]*{/"mcpServers": { "agent-bus": { "command": "'"$escaped_path"'" },/')"
+    updated="$(echo "$content" | sed 's/"mcpServers"[[:space:]]*:[[:space:]]*{/"mcpServers": { "tmux-agent-bus": { "command": "'"$escaped_path"'" },/')"
   else
-    updated="$(echo "$content" | sed 's/^{/{ "mcpServers": { "agent-bus": { "command": "'"$escaped_path"'" } },/')"
+    updated="$(echo "$content" | sed 's/^{/{ "mcpServers": { "tmux-agent-bus": { "command": "'"$escaped_path"'" } },/')"
   fi
 
   echo "$updated" > "$config_file"
@@ -150,14 +150,14 @@ echo "Configuring MCP clients..."
 
 # Claude Code (uses CLI, not a config file)
 if command -v claude >/dev/null 2>&1; then
-  if claude mcp get agent-bus >/dev/null 2>&1; then
+  if claude mcp get tmux-agent-bus >/dev/null 2>&1; then
     echo "  Claude Code: already configured"
     CONFIGURED="${CONFIGURED}Claude Code, "
   else
-    claude mcp add -s user agent-bus "$BINARY_PATH" 2>/dev/null && {
+    claude mcp add -s user tmux-agent-bus "$BINARY_PATH" 2>/dev/null && {
       echo "  Claude Code: configured"
       CONFIGURED="${CONFIGURED}Claude Code, "
-    } || echo "  Claude Code: failed to configure (try: claude mcp add -s user agent-bus $BINARY_PATH)"
+    } || echo "  Claude Code: failed to configure (try: claude mcp add -s user tmux-agent-bus $BINARY_PATH)"
   fi
 fi
 
@@ -201,22 +201,22 @@ fi
 
 # Codex (uses CLI, not a config file)
 if command -v codex >/dev/null 2>&1; then
-  if codex mcp list 2>/dev/null | grep -q 'agent-bus'; then
+  if codex mcp list 2>/dev/null | grep -q 'tmux-agent-bus'; then
     echo "  Codex: already configured"
     CONFIGURED="${CONFIGURED}Codex, "
   else
-    codex mcp add agent-bus -- "$BINARY_PATH" 2>/dev/null && {
+    codex mcp add tmux-agent-bus -- "$BINARY_PATH" 2>/dev/null && {
       echo "  Codex: configured"
       CONFIGURED="${CONFIGURED}Codex, "
-    } || echo "  Codex: failed to configure (try: codex mcp add agent-bus -- $BINARY_PATH)"
+    } || echo "  Codex: failed to configure (try: codex mcp add tmux-agent-bus -- $BINARY_PATH)"
   fi
 fi
 
 if [ -z "$CONFIGURED" ]; then
   echo "  No MCP clients detected. Add manually to your client config:"
   echo ""
-  echo '  { "mcpServers": { "agent-bus": { "command": "'"$BINARY_PATH"'" } } }'
+  echo '  { "mcpServers": { "tmux-agent-bus": { "command": "'"$BINARY_PATH"'" } } }'
 else
   echo ""
-  echo "Done! Restart your MCP client to start using agent-bus."
+  echo "Done! Restart your MCP client to start using tmux-agent-bus."
 fi
