@@ -28,10 +28,8 @@ function saveConfig(config) {
   writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
 }
 
-// Walk up process tree to find which tmux pane this process lives in
 function detectPane() {
   try {
-    // Get all tmux pane PIDs mapped to pane IDs
     const paneList = execSync(
       "tmux list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}'",
       { timeout: 3000 }
@@ -43,7 +41,6 @@ function detectPane() {
       paneMap[pid] = paneId;
     }
 
-    // Walk up from our PID until we find a tmux pane PID
     let pid = process.pid;
     while (pid && pid !== 1) {
       if (paneMap[String(pid)]) {
@@ -79,23 +76,37 @@ function logHandoff(record) {
   appendFileSync(LOG_PATH, entry + "\n");
 }
 
-// Read config fresh on each call (other agents may have registered since startup)
 function getAgents() {
   return loadConfig().agents || {};
 }
 
 const server = new McpServer({
   name: "agent-bus",
-  version: "0.2.0",
+  version: "0.3.0",
 }, {
   instructions: INSTRUCTIONS,
 });
 
 server.tool(
+  "who",
+  "List all agents currently registered on the bus. Call this before registering to see what names are taken.",
+  {},
+  async () => {
+    const agents = getAgents();
+    const names = Object.keys(agents);
+    if (names.length === 0) {
+      return { content: [{ type: "text", text: "No agents registered yet. Be the first — call register." }] };
+    }
+    const lines = names.map((n) => `- ${n} (pane ${agents[n].pane})`).join("\n");
+    return { content: [{ type: "text", text: `Registered agents:\n${lines}` }] };
+  }
+);
+
+server.tool(
   "register",
-  "Register this agent with the bus. Call this once at the start of a session with your agent name. The bus auto-detects your tmux pane.",
+  "Register this agent with the bus. Call this once at the start of a session. Pick a unique name — call 'who' first to see what's taken. The bus auto-detects your tmux pane.",
   {
-    name: z.string().describe("Your agent name, e.g. 'claude' or 'codex'"),
+    name: z.string().describe("Your unique agent name, e.g. 'claude-1', 'codex-alpha'. Must be unique on the bus."),
   },
   async ({ name }) => {
     const pane = detectPane();
@@ -103,6 +114,9 @@ server.tool(
       return { content: [{ type: "text", text: "Failed to detect tmux pane. Are you running inside tmux?" }], isError: true };
     }
     const config = loadConfig();
+    if (config.agents[name] && config.agents[name].pane !== pane) {
+      return { content: [{ type: "text", text: `Name "${name}" is already taken by pane ${config.agents[name].pane}. Pick a different name. Call 'who' to see registered agents.` }], isError: true };
+    }
     config.agents[name] = { pane };
     saveConfig(config);
     const others = Object.keys(config.agents).filter((k) => k !== name);
@@ -116,21 +130,21 @@ server.tool(
   "signal_done",
   "Signal that you are done with your task and hand off to another agent. This injects a message into the other agent's tmux pane with your summary and request.",
   {
-    next: z.string().describe("Which agent should go next (e.g. 'claude' or 'codex')"),
+    from: z.string().describe("Your registered agent name"),
+    next: z.string().describe("Which agent should go next"),
     summary: z.string().describe("What you just finished"),
     request: z.string().describe("What you need the next agent to do"),
   },
-  async ({ next, summary, request }) => {
+  async ({ from, next, summary, request }) => {
     const agents = getAgents();
     const pane = agents[next]?.pane;
     if (!pane) {
       const available = Object.keys(agents);
       return { content: [{ type: "text", text: `Unknown agent: "${next}". Registered agents: ${available.length ? available.join(", ") : "none — agents must call register first"}.` }], isError: true };
     }
-    const callerName = Object.keys(agents).find((k) => k !== next) || "unknown";
-    const message = `[from ${callerName}]: ${summary} Request: ${request}`;
+    const message = `[from ${from}]: ${summary} Request: ${request}`;
     const result = sendToPane(pane, message);
-    logHandoff({ type: "signal_done", from: callerName, to: next, summary, request });
+    logHandoff({ type: "signal_done", from, to: next, summary, request });
     if (!result.success) {
       return { content: [{ type: "text", text: `Failed to reach ${next}: ${result.error}` }], isError: true };
     }
@@ -142,20 +156,20 @@ server.tool(
   "send_message",
   "Send a message to another agent without handing off. Use for mid-task questions or FYIs.",
   {
-    to: z.string().describe("Which agent to message (e.g. 'claude' or 'codex')"),
+    from: z.string().describe("Your registered agent name"),
+    to: z.string().describe("Which agent to message"),
     message: z.string().describe("The message to send"),
   },
-  async ({ to, message }) => {
+  async ({ from, to, message }) => {
     const agents = getAgents();
     const pane = agents[to]?.pane;
     if (!pane) {
       const available = Object.keys(agents);
       return { content: [{ type: "text", text: `Unknown agent: "${to}". Registered agents: ${available.length ? available.join(", ") : "none — agents must call register first"}.` }], isError: true };
     }
-    const callerName = Object.keys(agents).find((k) => k !== to) || "unknown";
-    const fullMessage = `[message from ${callerName}]: ${message}`;
+    const fullMessage = `[message from ${from}]: ${message}`;
     const result = sendToPane(pane, fullMessage);
-    logHandoff({ type: "send_message", from: callerName, to, message });
+    logHandoff({ type: "send_message", from, to, message });
     if (!result.success) {
       return { content: [{ type: "text", text: `Failed to reach ${to}: ${result.error}` }], isError: true };
     }
