@@ -156,42 +156,25 @@ fn capture_pane(pane: &str) -> String {
 fn try_send(pane: &str, sanitized: &str) -> Result<bool> {
     let before = capture_pane(pane);
 
-    // Send text as literal (avoids key-name interpretation)
+    // Send text WITHOUT -l to avoid bracketed paste. Each arg that isn't a
+    // recognized key name is sent as individual characters. Since the full
+    // message is a single arg, it won't match any key name. Then "Enter"
+    // as a separate arg sends a real Enter keypress.
     let status = Command::new("tmux")
-        .args(["send-keys", "-t", pane, "-l", sanitized])
+        .args(["send-keys", "-t", pane, "--", sanitized, "Enter"])
         .status()
-        .context("failed to run tmux send-keys (text)")?;
+        .context("failed to run tmux send-keys")?;
     if !status.success() {
-        anyhow::bail!("tmux send-keys failed (text)");
+        anyhow::bail!("tmux send-keys failed");
     }
 
-    // Small delay to let the paste complete before sending Enter
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
-    // Send Enter separately so it's not swallowed by bracketed paste
-    let status = Command::new("tmux")
-        .args(["send-keys", "-t", pane, "Enter"])
-        .status()
-        .context("failed to run tmux send-keys (Enter)")?;
-    if !status.success() {
-        anyhow::bail!("tmux send-keys failed (Enter)");
-    }
-
-    // Poll for ack: wait for pane content to change at least twice —
-    // first change is the text appearing in the input box,
-    // second change is the agent processing it (spinner, output, etc.)
-    std::thread::sleep(std::time::Duration::from_millis(500));
-    let first_change = capture_pane(pane);
-    for _ in 0..6 {
+    // Poll for ack: wait for pane to show the message was processed
+    for _ in 0..8 {
         std::thread::sleep(std::time::Duration::from_millis(500));
         let current = capture_pane(pane);
-        if current != before && current != first_change {
+        if current != before {
             return Ok(true);
         }
-    }
-    // Accept single change as partial success if content did change
-    if first_change != before {
-        return Ok(true);
     }
     Ok(false)
 }
