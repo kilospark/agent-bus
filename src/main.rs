@@ -39,7 +39,6 @@ fn iso_now() -> String {
 
 struct PaneAgent {
     name: String,
-    agent_type: String,
     pane: String,
     session: String,
 }
@@ -50,7 +49,7 @@ fn list_agents() -> Vec<PaneAgent> {
     let output = Command::new("tmux")
         .args([
             "list-panes", "-a", "-F",
-            "#{@agent-name}\t#{@agent-type}\t#{session_name}:#{window_index}.#{pane_index}\t#{session_name}",
+            "#{@agent-name}\t#{session_name}:#{window_index}.#{pane_index}\t#{session_name}",
         ])
         .output();
 
@@ -64,12 +63,11 @@ fn list_agents() -> Vec<PaneAgent> {
         .lines()
         .filter_map(|line| {
             let parts: Vec<&str> = line.split('\t').collect();
-            if parts.len() == 4 && !parts[0].is_empty() {
+            if parts.len() == 3 && !parts[0].is_empty() {
                 Some(PaneAgent {
                     name: parts[0].to_string(),
-                    agent_type: parts[1].to_string(),
-                    pane: parts[2].to_string(),
-                    session: parts[3].to_string(),
+                    pane: parts[1].to_string(),
+                    session: parts[2].to_string(),
                 })
             } else {
                 None
@@ -237,12 +235,9 @@ struct AgentState {
 impl Drop for AgentState {
     fn drop(&mut self) {
         if let Some(pane) = &self.pane {
-            // Clear pane options on exit
+            // Clear pane option on exit
             let _ = Command::new("tmux")
                 .args(["set-option", "-pu", "-t", pane, "@agent-name"])
-                .status();
-            let _ = Command::new("tmux")
-                .args(["set-option", "-pu", "-t", pane, "@agent-type"])
                 .status();
             if let Some(name) = &self.name {
                 eprintln!("tmux-agent-bus: unregistered \"{name}\"");
@@ -277,12 +272,9 @@ fn register() -> AgentState {
         n += 1;
     };
 
-    // Set pane options — this IS the registration. No JSON file needed.
+    // Set pane option — this IS the registration. No JSON file needed.
     let _ = Command::new("tmux")
         .args(["set-option", "-p", "-t", &pane, "@agent-name", &name])
-        .status();
-    let _ = Command::new("tmux")
-        .args(["set-option", "-p", "-t", &pane, "@agent-type", &agent_type])
         .status();
 
     // Enable pane borders for this window if not already on
@@ -329,7 +321,7 @@ fn handle_who(state: &AgentState) -> Value {
         .iter()
         .map(|a| {
             let you = if a.name == my_name { " (you)" } else { "" };
-            format!("- {} [{}]{} (pane {})", a.name, a.agent_type, you, a.pane)
+            format!("- {}{} (pane {})", a.name, you, a.pane)
         })
         .collect();
     ok_result(&format!("Channel \"{channel}\":\n{}\n\nUse \"@all\" to broadcast to all agents.", lines.join("\n")))
