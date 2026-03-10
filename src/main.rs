@@ -76,11 +76,11 @@ fn list_agents() -> Vec<PaneAgent> {
         .collect()
 }
 
-/// Find the pane for a given agent name (across all sessions).
-fn find_agent(name: &str) -> Option<String> {
+/// Find the pane for a given agent name within a specific channel (session).
+fn find_agent(name: &str, channel: &str) -> Option<String> {
     list_agents()
         .into_iter()
-        .find(|a| a.name == name)
+        .find(|a| a.name == name && a.session == channel)
         .map(|a| a.pane)
 }
 
@@ -347,7 +347,7 @@ fn handle_signal_done(state: &AgentState, args: &Value) -> Value {
         return broadcast(channel, my_name, &message);
     }
 
-    match find_agent(next) {
+    match find_agent(next, channel) {
         None => {
             let available = available_agents(channel, my_name);
             err_result(&format!("Unknown agent \"{next}\". Available: {available}."))
@@ -381,7 +381,7 @@ fn handle_send_message(state: &AgentState, args: &Value) -> Value {
         return broadcast(channel, my_name, &full_message);
     }
 
-    match find_agent(to) {
+    match find_agent(to, channel) {
         None => {
             let available = available_agents(channel, my_name);
             err_result(&format!("Unknown agent \"{to}\". Available: {available}."))
