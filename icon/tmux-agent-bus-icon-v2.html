@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>agent-bus icon — pane grid v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d0d;
+    font-family: 'Courier New', monospace;
+    color: #e0e0e0;
+    padding: 52px 40px;
+    min-height: 100vh;
+  }
+  .header { margin-bottom: 48px; }
+  h1 { font-size: 11px; letter-spacing: 0.2em; color: #333; text-transform: uppercase; margin-bottom: 6px; }
+  h2 { font-size: 20px; color: #fff; letter-spacing: 0.04em; }
+
+  .section-label {
+    font-size: 10px; letter-spacing: 0.2em; color: #333;
+    text-transform: uppercase; margin-bottom: 20px; margin-top: 48px;
+  }
+
+  /* SIZE SHOWCASE */
+  .size-row {
+    display: flex; align-items: flex-end; gap: 40px; flex-wrap: wrap;
+  }
+  .size-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .size-px { font-size: 10px; color: #333; letter-spacing: 0.1em; }
+
+  /* DARK / LIGHT backgrounds */
+  .bg-row {
+    display: flex; gap: 32px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .bg-swatch {
+    padding: 28px; border-radius: 4px; display: flex; gap: 20px; align-items: center;
+  }
+  .bg-dark { background: #0d0d0d; border: 1px solid #1e1e1e; }
+  .bg-mid  { background: #1a1a1a; border: 1px solid #2a2a2a; }
+  .bg-term { background: #0a120a; border: 1px solid #1a2a1a; }
+  .bg-light { background: #f0f0f0; }
+
+  /* COLORS STRIP */
+  .colors { display: flex; gap: 16px; margin-top: 12px; }
+  .chip { width: 36px; height: 36px; border-radius: 3px; }
+  .chip-label { font-size: 9px; color: #444; letter-spacing: 0.08em; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>kilospark / agent-bus</h1>
+  <h2>pane grid — icon v2</h2>
+</div>
+
+<!-- MASTER ICON (256px) -->
+<div class="section-label">master · 256px</div>
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cutout corner bg: octagon -->
+  <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+
+  <!-- Outer frame border -->
+  <path d="M20 1.5 L235 1.5 L254.5 21 L254.5 235 L235 254.5 L21 254.5 L1.5 235 L1.5 21 Z"
+        fill="none" stroke="#39ff14" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Corner tick marks (terminal aesthetic) -->
+  <line x1="0" y1="20" x2="10" y2="10" stroke="#39ff14" stroke-width="1" opacity="0.4"/>
+  <line x1="236" y1="0" x2="246" y2="10" stroke="#39ff14" stroke-width="1" opacity="0.4"/>
+  <line x1="0" y1="236" x2="10" y2="246" stroke="#39ff14" stroke-width="1" opacity="0.4"/>
+  <line x1="256" y1="236" x2="246" y2="246" stroke="#39ff14" stroke-width="1" opacity="0.4"/>
+
+  <!-- Pane dividers -->
+  <!-- Vertical center -->
+  <line x1="128" y1="24" x2="128" y2="232" stroke="#39ff14" stroke-width="1.5"/>
+  <!-- Horizontal center -->
+  <line x1="24" y1="128" x2="232" y2="128" stroke="#39ff14" stroke-width="1.5"/>
+
+  <!-- Pane border status bar (top strip per pane) -->
+  <rect x="24" y="24" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+  <rect x="132" y="24" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+  <rect x="24" y="132" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+  <rect x="132" y="132" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+
+  <!-- Status bar text -->
+  <text x="28" y="32" font-family="Courier New" font-size="7" fill="#39ff14" opacity="0.7">claude-1</text>
+  <text x="136" y="32" font-family="Courier New" font-size="7" fill="#39ff14" opacity="0.7">codex-1</text>
+  <text x="28" y="140" font-family="Courier New" font-size="7" fill="#39ff14" opacity="0.7">copilot-1</text>
+  <text x="136" y="140" font-family="Courier New" font-size="7" fill="#39ff14" opacity="0.5">idle</text>
+
+  <!-- ── Pane TL: sparse code lines glyph ── -->
+  <rect x="32" y="48" width="52" height="2.5" rx="1" fill="#39ff14" opacity="0.7"/>
+  <rect x="32" y="56" width="36" height="2.5" rx="1" fill="#39ff14" opacity="0.5"/>
+  <rect x="32" y="64" width="64" height="2.5" rx="1" fill="#39ff14" opacity="0.4"/>
+  <rect x="32" y="72" width="44" height="2.5" rx="1" fill="#39ff14" opacity="0.6"/>
+  <rect x="32" y="80" width="28" height="2.5" rx="1" fill="#39ff14" opacity="0.3"/>
+  <!-- cursor blink -->
+  <rect x="32" y="90" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+
+  <!-- ── Pane TR: dots matrix glyph ── -->
+  <!-- 4×4 dot grid, some lit -->
+  <circle cx="148" cy="52" r="2.5" fill="#39ff14" opacity="0.9"/>
+  <circle cx="160" cy="52" r="2.5" fill="#39ff14" opacity="0.4"/>
+  <circle cx="172" cy="52" r="2.5" fill="#39ff14" opacity="0.8"/>
+  <circle cx="184" cy="52" r="2.5" fill="#39ff14" opacity="0.2"/>
+  <circle cx="148" cy="64" r="2.5" fill="#39ff14" opacity="0.3"/>
+  <circle cx="160" cy="64" r="2.5" fill="#39ff14" opacity="0.9"/>
+  <circle cx="172" cy="64" r="2.5" fill="#39ff14" opacity="0.5"/>
+  <circle cx="184" cy="64" r="2.5" fill="#39ff14" opacity="0.9"/>
+  <circle cx="148" cy="76" r="2.5" fill="#39ff14" opacity="0.7"/>
+  <circle cx="160" cy="76" r="2.5" fill="#39ff14" opacity="0.2"/>
+  <circle cx="172" cy="76" r="2.5" fill="#39ff14" opacity="0.9"/>
+  <circle cx="184" cy="76" r="2.5" fill="#39ff14" opacity="0.4"/>
+  <circle cx="148" cy="88" r="2.5" fill="#39ff14" opacity="0.5"/>
+  <circle cx="160" cy="88" r="2.5" fill="#39ff14" opacity="0.8"/>
+  <circle cx="172" cy="88" r="2.5" fill="#39ff14" opacity="0.3"/>
+  <circle cx="184" cy="88" r="2.5" fill="#39ff14" opacity="0.7"/>
+  <!-- cursor -->
+  <rect x="148" y="100" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+
+  <!-- ── Pane BL: waveform / signal glyph ── -->
+  <polyline points="32,168 42,158 52,178 62,155 72,172 82,162 92,170 102,160 112,168"
+            stroke="#39ff14" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+  <!-- cursor -->
+  <rect x="32" y="186" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+
+  <!-- ── Pane BR: dimmed / idle ── -->
+  <rect x="140" y="160" width="40" height="2.5" rx="1" fill="#39ff14" opacity="0.15"/>
+  <rect x="140" y="168" width="28" height="2.5" rx="1" fill="#39ff14" opacity="0.1"/>
+  <rect x="140" y="176" width="52" height="2.5" rx="1" fill="#39ff14" opacity="0.12"/>
+  <rect x="140" y="184" width="20" height="2.5" rx="1" fill="#39ff14" opacity="0.08"/>
+
+  <!-- Signal arrow crossing pane divide (TL→TR) -->
+  <line x1="102" y1="72" x2="124" y2="72" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="3 2.5" opacity="0.8"/>
+  <path d="M121 68.5 L126 72 L121 75.5" fill="#39ff14" opacity="0.8"/>
+</svg>
+
+
+<!-- SIZE SCALE -->
+<div class="section-label" style="margin-top:56px;">sizes</div>
+<div class="size-row">
+
+  <div class="size-item">
+    <svg width="128" height="128" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <path d="M20 1.5 L235 1.5 L254.5 21 L254.5 235 L235 254.5 L21 254.5 L1.5 235 L1.5 21 Z" fill="none" stroke="#39ff14" stroke-width="1.5" opacity="0.6"/>
+      <line x1="128" y1="24" x2="128" y2="232" stroke="#39ff14" stroke-width="1.5"/>
+      <line x1="24" y1="128" x2="232" y2="128" stroke="#39ff14" stroke-width="1.5"/>
+      <rect x="24" y="24" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+      <rect x="132" y="24" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+      <rect x="24" y="132" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+      <rect x="132" y="132" width="100" height="10" fill="#39ff14" opacity="0.07"/>
+      <rect x="32" y="48" width="52" height="2.5" rx="1" fill="#39ff14" opacity="0.7"/>
+      <rect x="32" y="56" width="36" height="2.5" rx="1" fill="#39ff14" opacity="0.5"/>
+      <rect x="32" y="64" width="64" height="2.5" rx="1" fill="#39ff14" opacity="0.4"/>
+      <rect x="32" y="72" width="44" height="2.5" rx="1" fill="#39ff14" opacity="0.6"/>
+      <rect x="32" y="82" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <circle cx="148" cy="52" r="2.5" fill="#39ff14" opacity="0.9"/>
+      <circle cx="160" cy="52" r="2.5" fill="#39ff14" opacity="0.4"/>
+      <circle cx="172" cy="52" r="2.5" fill="#39ff14" opacity="0.8"/>
+      <circle cx="184" cy="52" r="2.5" fill="#39ff14" opacity="0.2"/>
+      <circle cx="148" cy="64" r="2.5" fill="#39ff14" opacity="0.3"/>
+      <circle cx="160" cy="64" r="2.5" fill="#39ff14" opacity="0.9"/>
+      <circle cx="172" cy="64" r="2.5" fill="#39ff14" opacity="0.5"/>
+      <circle cx="184" cy="64" r="2.5" fill="#39ff14" opacity="0.9"/>
+      <circle cx="148" cy="76" r="2.5" fill="#39ff14" opacity="0.7"/>
+      <circle cx="160" cy="76" r="2.5" fill="#39ff14" opacity="0.2"/>
+      <circle cx="172" cy="76" r="2.5" fill="#39ff14" opacity="0.9"/>
+      <circle cx="184" cy="76" r="2.5" fill="#39ff14" opacity="0.4"/>
+      <rect x="148" y="86" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <polyline points="32,168 42,158 52,178 62,155 72,172 82,162 92,170 102,160 112,168" stroke="#39ff14" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <rect x="32" y="186" width="6" height="11" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <rect x="140" y="160" width="40" height="2.5" rx="1" fill="#39ff14" opacity="0.15"/>
+      <rect x="140" y="168" width="28" height="2.5" rx="1" fill="#39ff14" opacity="0.1"/>
+      <rect x="140" y="176" width="52" height="2.5" rx="1" fill="#39ff14" opacity="0.12"/>
+      <line x1="102" y1="72" x2="124" y2="72" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="3 2.5" opacity="0.8"/>
+      <path d="M121 68.5 L126 72 L121 75.5" fill="#39ff14" opacity="0.8"/>
+    </svg>
+    <div class="size-px">128px</div>
+  </div>
+
+  <div class="size-item">
+    <svg width="64" height="64" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <path d="M20 1.5 L235 1.5 L254.5 21 L254.5 235 L235 254.5 L21 254.5 L1.5 235 L1.5 21 Z" fill="none" stroke="#39ff14" stroke-width="2" opacity="0.7"/>
+      <line x1="128" y1="20" x2="128" y2="236" stroke="#39ff14" stroke-width="2"/>
+      <line x1="20" y1="128" x2="236" y2="128" stroke="#39ff14" stroke-width="2"/>
+      <rect x="24" y="24" width="100" height="12" fill="#39ff14" opacity="0.09"/>
+      <rect x="132" y="24" width="100" height="12" fill="#39ff14" opacity="0.09"/>
+      <rect x="24" y="132" width="100" height="12" fill="#39ff14" opacity="0.09"/>
+      <rect x="132" y="132" width="100" height="12" fill="#39ff14" opacity="0.09"/>
+      <rect x="32" y="52" width="56" height="3.5" rx="1" fill="#39ff14" opacity="0.7"/>
+      <rect x="32" y="62" width="38" height="3.5" rx="1" fill="#39ff14" opacity="0.5"/>
+      <rect x="32" y="72" width="68" height="3.5" rx="1" fill="#39ff14" opacity="0.4"/>
+      <rect x="32" y="84" width="8" height="14" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <circle cx="152" cy="56" r="4" fill="#39ff14" opacity="0.9"/>
+      <circle cx="168" cy="56" r="4" fill="#39ff14" opacity="0.35"/>
+      <circle cx="184" cy="56" r="4" fill="#39ff14" opacity="0.8"/>
+      <circle cx="152" cy="72" r="4" fill="#39ff14" opacity="0.3"/>
+      <circle cx="168" cy="72" r="4" fill="#39ff14" opacity="0.9"/>
+      <circle cx="184" cy="72" r="4" fill="#39ff14" opacity="0.5"/>
+      <circle cx="152" cy="88" r="4" fill="#39ff14" opacity="0.7"/>
+      <circle cx="168" cy="88" r="4" fill="#39ff14" opacity="0.2"/>
+      <circle cx="184" cy="88" r="4" fill="#39ff14" opacity="0.9"/>
+      <polyline points="36,172 50,156 64,182 78,152 92,174 106,162 116,172" stroke="#39ff14" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <rect x="36" y="190" width="8" height="14" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <rect x="144" y="165" width="44" height="3.5" rx="1" fill="#39ff14" opacity="0.15"/>
+      <rect x="144" y="175" width="30" height="3.5" rx="1" fill="#39ff14" opacity="0.1"/>
+      <rect x="144" y="185" width="56" height="3.5" rx="1" fill="#39ff14" opacity="0.12"/>
+    </svg>
+    <div class="size-px">64px</div>
+  </div>
+
+  <div class="size-item">
+    <svg width="48" height="48" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <path d="M20 1.5 L235 1.5 L254.5 21 L254.5 235 L235 254.5 L21 254.5 L1.5 235 L1.5 21 Z" fill="none" stroke="#39ff14" stroke-width="2.5" opacity="0.7"/>
+      <line x1="128" y1="18" x2="128" y2="238" stroke="#39ff14" stroke-width="2.5"/>
+      <line x1="18" y1="128" x2="238" y2="128" stroke="#39ff14" stroke-width="2.5"/>
+      <rect x="24" y="24" width="100" height="14" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="24" width="100" height="14" fill="#39ff14" opacity="0.1"/>
+      <rect x="24" y="132" width="100" height="14" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="132" width="100" height="14" fill="#39ff14" opacity="0.1"/>
+      <rect x="34" y="56" width="56" height="5" rx="1.5" fill="#39ff14" opacity="0.7"/>
+      <rect x="34" y="70" width="36" height="5" rx="1.5" fill="#39ff14" opacity="0.45"/>
+      <rect x="34" y="84" width="64" height="5" rx="1.5" fill="#39ff14" opacity="0.6"/>
+      <rect x="34" y="100" width="10" height="16" rx="1" fill="#39ff14" opacity="0.95"/>
+      <circle cx="156" cy="60" r="5.5" fill="#39ff14" opacity="0.85"/>
+      <circle cx="176" cy="60" r="5.5" fill="#39ff14" opacity="0.3"/>
+      <circle cx="196" cy="60" r="5.5" fill="#39ff14" opacity="0.75"/>
+      <circle cx="156" cy="80" r="5.5" fill="#39ff14" opacity="0.25"/>
+      <circle cx="176" cy="80" r="5.5" fill="#39ff14" opacity="0.9"/>
+      <circle cx="196" cy="80" r="5.5" fill="#39ff14" opacity="0.45"/>
+      <circle cx="156" cy="100" r="5.5" fill="#39ff14" opacity="0.65"/>
+      <circle cx="176" cy="100" r="5.5" fill="#39ff14" opacity="0.15"/>
+      <circle cx="196" cy="100" r="5.5" fill="#39ff14" opacity="0.85"/>
+      <polyline points="36,180 54,160 72,190 90,155 108,178 120,168" stroke="#39ff14" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <rect x="36" y="200" width="10" height="16" rx="1" fill="#39ff14" opacity="0.95"/>
+      <rect x="148" y="174" width="52" height="5" rx="1.5" fill="#39ff14" opacity="0.14"/>
+      <rect x="148" y="188" width="36" height="5" rx="1.5" fill="#39ff14" opacity="0.09"/>
+      <rect x="148" y="202" width="60" height="5" rx="1.5" fill="#39ff14" opacity="0.12"/>
+    </svg>
+    <div class="size-px">48px</div>
+  </div>
+
+  <div class="size-item">
+    <svg width="32" height="32" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <path d="M22 2 L234 2 L254 22 L254 234 L234 254 L22 254 L2 234 L2 22 Z" fill="none" stroke="#39ff14" stroke-width="3" opacity="0.7"/>
+      <line x1="128" y1="16" x2="128" y2="240" stroke="#39ff14" stroke-width="3"/>
+      <line x1="16" y1="128" x2="240" y2="128" stroke="#39ff14" stroke-width="3"/>
+      <rect x="22" y="22" width="102" height="16" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="22" width="102" height="16" fill="#39ff14" opacity="0.1"/>
+      <rect x="22" y="132" width="102" height="16" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="132" width="102" height="16" fill="#39ff14" opacity="0.1"/>
+      <rect x="34" y="56" width="64" height="7" rx="2" fill="#39ff14" opacity="0.7"/>
+      <rect x="34" y="72" width="40" height="7" rx="2" fill="#39ff14" opacity="0.45"/>
+      <rect x="34" y="88" width="72" height="7" rx="2" fill="#39ff14" opacity="0.6"/>
+      <rect x="34" y="106" width="12" height="18" rx="1" fill="#39ff14" opacity="0.95"/>
+      <circle cx="160" cy="62" r="7" fill="#39ff14" opacity="0.85"/>
+      <circle cx="182" cy="62" r="7" fill="#39ff14" opacity="0.25"/>
+      <circle cx="204" cy="62" r="7" fill="#39ff14" opacity="0.7"/>
+      <circle cx="160" cy="84" r="7" fill="#39ff14" opacity="0.2"/>
+      <circle cx="182" cy="84" r="7" fill="#39ff14" opacity="0.9"/>
+      <circle cx="204" cy="84" r="7" fill="#39ff14" opacity="0.4"/>
+      <circle cx="160" cy="106" r="7" fill="#39ff14" opacity="0.6"/>
+      <circle cx="182" cy="106" r="7" fill="#39ff14" opacity="0.15"/>
+      <circle cx="204" cy="106" r="7" fill="#39ff14" opacity="0.8"/>
+      <polyline points="34,188 58,162 82,204 106,152 118,176" stroke="#39ff14" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <rect x="34" y="210" width="12" height="18" rx="1" fill="#39ff14" opacity="0.95"/>
+      <rect x="148" y="180" width="64" height="7" rx="2" fill="#39ff14" opacity="0.13"/>
+      <rect x="148" y="198" width="44" height="7" rx="2" fill="#39ff14" opacity="0.08"/>
+    </svg>
+    <div class="size-px">32px</div>
+  </div>
+
+  <div class="size-item">
+    <svg width="16" height="16" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <line x1="128" y1="12" x2="128" y2="244" stroke="#39ff14" stroke-width="4"/>
+      <line x1="12" y1="128" x2="244" y2="128" stroke="#39ff14" stroke-width="4"/>
+      <path d="M22 2 L234 2 L254 22 L254 234 L234 254 L22 254 L2 234 L2 22 Z" fill="none" stroke="#39ff14" stroke-width="4" opacity="0.65"/>
+      <rect x="26" y="26" width="96" height="96" fill="#39ff14" opacity="0.06"/>
+      <rect x="134" y="26" width="96" height="96" fill="#39ff14" opacity="0.06"/>
+      <rect x="26" y="134" width="96" height="96" fill="#39ff14" opacity="0.06"/>
+    </svg>
+    <div class="size-px">16px</div>
+  </div>
+
+</div>
+
+
+<!-- BACKGROUNDS -->
+<div class="section-label">on various backgrounds</div>
+<div class="bg-row">
+  <div class="bg-swatch bg-dark">
+    <svg width="64" height="64" viewBox="0 0 256 256" fill="none">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#080e08"/>
+      <path d="M22 2 L234 2 L254 22 L254 234 L234 254 L22 254 L2 234 L2 22 Z" fill="none" stroke="#39ff14" stroke-width="2.5" opacity="0.65"/>
+      <line x1="128" y1="20" x2="128" y2="236" stroke="#39ff14" stroke-width="2"/>
+      <line x1="20" y1="128" x2="236" y2="128" stroke="#39ff14" stroke-width="2"/>
+      <rect x="24" y="24" width="100" height="12" fill="#39ff14" opacity="0.08"/>
+      <rect x="132" y="24" width="100" height="12" fill="#39ff14" opacity="0.08"/>
+      <rect x="24" y="132" width="100" height="12" fill="#39ff14" opacity="0.08"/>
+      <rect x="132" y="132" width="100" height="12" fill="#39ff14" opacity="0.08"/>
+      <rect x="32" y="50" width="52" height="4" rx="1" fill="#39ff14" opacity="0.7"/>
+      <rect x="32" y="62" width="36" height="4" rx="1" fill="#39ff14" opacity="0.45"/>
+      <rect x="32" y="74" width="60" height="4" rx="1" fill="#39ff14" opacity="0.55"/>
+      <rect x="32" y="86" width="8" height="13" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <circle cx="152" cy="54" r="4" fill="#39ff14" opacity="0.9"/>
+      <circle cx="168" cy="54" r="4" fill="#39ff14" opacity="0.3"/>
+      <circle cx="184" cy="54" r="4" fill="#39ff14" opacity="0.8"/>
+      <circle cx="152" cy="70" r="4" fill="#39ff14" opacity="0.25"/>
+      <circle cx="168" cy="70" r="4" fill="#39ff14" opacity="0.9"/>
+      <circle cx="184" cy="70" r="4" fill="#39ff14" opacity="0.45"/>
+      <circle cx="152" cy="86" r="4" fill="#39ff14" opacity="0.65"/>
+      <circle cx="168" cy="86" r="4" fill="#39ff14" opacity="0.15"/>
+      <circle cx="184" cy="86" r="4" fill="#39ff14" opacity="0.85"/>
+      <polyline points="34,172 50,156 66,182 82,152 96,172 108,162 118,170" stroke="#39ff14" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+      <rect x="34" y="188" width="8" height="13" rx="0.5" fill="#39ff14" opacity="0.95"/>
+      <rect x="144" y="165" width="46" height="4" rx="1" fill="#39ff14" opacity="0.14"/>
+      <rect x="144" y="178" width="32" height="4" rx="1" fill="#39ff14" opacity="0.09"/>
+    </svg>
+    <div style="font-size:10px;color:#333;letter-spacing:.1em">#0d0d0d</div>
+  </div>
+
+  <div class="bg-swatch bg-term">
+    <svg width="64" height="64" viewBox="0 0 256 256" fill="none">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#060d06"/>
+      <path d="M22 2 L234 2 L254 22 L254 234 L234 254 L22 254 L2 234 L2 22 Z" fill="none" stroke="#39ff14" stroke-width="2.5" opacity="0.7"/>
+      <line x1="128" y1="20" x2="128" y2="236" stroke="#39ff14" stroke-width="2"/>
+      <line x1="20" y1="128" x2="236" y2="128" stroke="#39ff14" stroke-width="2"/>
+      <rect x="24" y="24" width="100" height="12" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="24" width="100" height="12" fill="#39ff14" opacity="0.1"/>
+      <rect x="24" y="132" width="100" height="12" fill="#39ff14" opacity="0.1"/>
+      <rect x="132" y="132" width="100" height="12" fill="#39ff14" opacity="0.1"/>
+      <rect x="32" y="50" width="52" height="4" rx="1" fill="#39ff14" opacity="0.8"/>
+      <rect x="32" y="62" width="36" height="4" rx="1" fill="#39ff14" opacity="0.5"/>
+      <rect x="32" y="74" width="60" height="4" rx="1" fill="#39ff14" opacity="0.6"/>
+      <rect x="32" y="86" width="8" height="13" rx="0.5" fill="#39ff14"/>
+      <circle cx="152" cy="54" r="4" fill="#39ff14" opacity="0.95"/>
+      <circle cx="168" cy="54" r="4" fill="#39ff14" opacity="0.35"/>
+      <circle cx="184" cy="54" r="4" fill="#39ff14" opacity="0.85"/>
+      <circle cx="152" cy="70" r="4" fill="#39ff14" opacity="0.3"/>
+      <circle cx="168" cy="70" r="4" fill="#39ff14" opacity="0.95"/>
+      <circle cx="184" cy="70" r="4" fill="#39ff14" opacity="0.5"/>
+      <circle cx="152" cy="86" r="4" fill="#39ff14" opacity="0.7"/>
+      <circle cx="168" cy="86" r="4" fill="#39ff14" opacity="0.2"/>
+      <circle cx="184" cy="86" r="4" fill="#39ff14" opacity="0.9"/>
+      <polyline points="34,172 50,156 66,182 82,152 96,172 108,162 118,170" stroke="#39ff14" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+      <rect x="34" y="188" width="8" height="13" rx="0.5" fill="#39ff14"/>
+    </svg>
+    <div style="font-size:10px;color:#333;letter-spacing:.1em">terminal green</div>
+  </div>
+
+  <div class="bg-swatch bg-light">
+    <svg width="64" height="64" viewBox="0 0 256 256" fill="none">
+      <path d="M20 0 L236 0 L256 20 L256 236 L236 256 L20 256 L0 236 L0 20 Z" fill="#f0f0f0"/>
+      <path d="M22 2 L234 2 L254 22 L254 234 L234 254 L22 254 L2 234 L2 22 Z" fill="none" stroke="#16a30a" stroke-width="2.5" opacity="0.7"/>
+      <line x1="128" y1="20" x2="128" y2="236" stroke="#16a30a" stroke-width="2"/>
+      <line x1="20" y1="128" x2="236" y2="128" stroke="#16a30a" stroke-width="2"/>
+      <rect x="24" y="24" width="100" height="12" fill="#16a30a" opacity="0.08"/>
+      <rect x="132" y="24" width="100" height="12" fill="#16a30a" opacity="0.08"/>
+      <rect x="24" y="132" width="100" height="12" fill="#16a30a" opacity="0.08"/>
+      <rect x="132" y="132" width="100" height="12" fill="#16a30a" opacity="0.08"/>
+      <rect x="32" y="50" width="52" height="4" rx="1" fill="#16a30a" opacity="0.7"/>
+      <rect x="32" y="62" width="36" height="4" rx="1" fill="#16a30a" opacity="0.5"/>
+      <rect x="32" y="74" width="60" height="4" rx="1" fill="#16a30a" opacity="0.6"/>
+      <rect x="32" y="86" width="8" height="13" rx="0.5" fill="#16a30a" opacity="0.9"/>
+      <circle cx="152" cy="54" r="4" fill="#16a30a" opacity="0.9"/>
+      <circle cx="168" cy="54" r="4" fill="#16a30a" opacity="0.3"/>
+      <circle cx="184" cy="54" r="4" fill="#16a30a" opacity="0.8"/>
+      <circle cx="152" cy="70" r="4" fill="#16a30a" opacity="0.25"/>
+      <circle cx="168" cy="70" r="4" fill="#16a30a" opacity="0.9"/>
+      <circle cx="184" cy="70" r="4" fill="#16a30a" opacity="0.45"/>
+      <circle cx="152" cy="86" r="4" fill="#16a30a" opacity="0.65"/>
+      <circle cx="168" cy="86" r="4" fill="#16a30a" opacity="0.15"/>
+      <circle cx="184" cy="86" r="4" fill="#16a30a" opacity="0.85"/>
+      <polyline points="34,172 50,156 66,182 82,152 96,172 108,162 118,170" stroke="#16a30a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+      <rect x="34" y="188" width="8" height="13" rx="0.5" fill="#16a30a" opacity="0.9"/>
+    </svg>
+    <div style="font-size:10px;color:#aaa;letter-spacing:.1em">light</div>
+  </div>
+</div>
+
+<!-- COLOR TOKENS -->
+<div class="section-label">color tokens</div>
+<div style="display:flex;gap:24px;flex-wrap:wrap;">
+  <div class="size-item">
+    <div class="chip" style="background:#39ff14;"></div>
+    <div class="chip-label">#39ff14<br>primary</div>
+  </div>
+  <div class="size-item">
+    <div class="chip" style="background:#080e08;"></div>
+    <div class="chip-label">#080e08<br>bg</div>
+  </div>
+  <div class="size-item">
+    <div class="chip" style="background:#39ff14;opacity:0.1;border:1px solid #222"></div>
+    <div class="chip-label">#39ff14 10%<br>pane header</div>
+  </div>
+  <div class="size-item">
+    <div class="chip" style="background:#16a30a;"></div>
+    <div class="chip-label">#16a30a<br>light variant</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,4 +1,3 @@
-use std::fs;
 use std::io::{self, BufRead, Write as IoWrite};
 use std::process::Command;
 
@@ -7,33 +6,6 @@ use serde_json::{json, Value};
 
 const TOOLS_JSON: &str = include_str!("../tools.json");
 const MCP_INSTRUCTIONS: &str = include_str!("../MCP_INSTRUCTIONS.md");
-
-fn bus_dir() -> std::path::PathBuf {
-    dirs::home_dir().unwrap_or_default().join(".agent-bus")
-}
-
-fn log_handoff(record: &Value) {
-    let log_path = bus_dir().join("history.jsonl");
-    let _ = fs::create_dir_all(bus_dir());
-    let mut entry = record.clone();
-    entry["ts"] = json!(iso_now());
-    let line = serde_json::to_string(&entry).unwrap_or_default() + "\n";
-    let _ = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_path)
-        .and_then(|mut f| f.write_all(line.as_bytes()));
-}
-
-fn iso_now() -> String {
-    let output = Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output();
-    match output {
-        Ok(o) => String::from_utf8_lossy(&o.stdout).trim().to_string(),
-        Err(_) => String::new(),
-    }
-}
 
 // --- Agent info from live tmux state ---
 
@@ -228,7 +200,7 @@ fn send_to_pane(pane: &str, message: &str) -> Result<bool> {
     }
 
     // Retry once
-    eprintln!("tmux-agent-bus: first send to {pane} got no ack, retrying...");
+    eprintln!("agent-bus: first send to {pane} got no ack, retrying...");
     try_send(pane, &sanitized)
 }
 
@@ -248,7 +220,7 @@ impl Drop for AgentState {
                 .args(["set-option", "-pu", "-t", pane, "@agent-name"])
                 .status();
             if let Some(name) = &self.name {
-                eprintln!("tmux-agent-bus: unregistered \"{name}\"");
+                eprintln!("agent-bus: unregistered \"{name}\"");
             }
         }
     }
@@ -301,7 +273,7 @@ fn register() -> AgentState {
             .status();
     }
 
-    eprintln!("tmux-agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
+    eprintln!("agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
 
     AgentState {
         name: Some(name),
@@ -346,11 +318,6 @@ fn handle_signal_done(state: &AgentState, args: &Value) -> Value {
     let my_name = state.name.as_deref().unwrap_or("unknown");
     let message = format!("[from {my_name}]: {summary} Request: {request}");
 
-    log_handoff(&json!({
-        "type": "signal_done", "channel": channel,
-        "from": my_name, "to": next, "summary": summary, "request": request
-    }));
-
     if next == "@all" {
         return broadcast(channel, my_name, &message);
     }
@@ -379,11 +346,6 @@ fn handle_send_message(state: &AgentState, args: &Value) -> Value {
     let message = args["message"].as_str().unwrap_or_default();
     let my_name = state.name.as_deref().unwrap_or("unknown");
     let full_message = format!("[message from {my_name}]: {message}");
-
-    log_handoff(&json!({
-        "type": "send_message", "channel": channel,
-        "from": my_name, "to": to, "message": message
-    }));
 
     if to == "@all" {
         return broadcast(channel, my_name, &full_message);
@@ -522,7 +484,7 @@ fn run_server(state: &AgentState) -> Result<()> {
                         "protocolVersion": "2025-11-25",
                         "capabilities": { "tools": {} },
                         "serverInfo": {
-                            "name": "tmux-agent-bus",
+                            "name": "agent-bus",
                             "version": env!("CARGO_PKG_VERSION")
                         },
                         "instructions": instructions

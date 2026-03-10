@@ -2,24 +2,26 @@
 
 REMOVED=""
 
-echo "Uninstalling tmux-agent-bus (cleaning up all versions)..."
+echo "Uninstalling agent-bus (cleaning up all versions)..."
 
-# --- Remove binaries (current Rust binary) ---
+# --- Remove binaries (current and old names) ---
 
 for dir in /usr/local/bin "$HOME/.local/bin"; do
-  if [ -x "$dir/tmux-agent-bus" ]; then
-    if [ -w "$dir" ]; then
-      rm "$dir/tmux-agent-bus"
-      echo "Removed $dir/tmux-agent-bus"
-      REMOVED="${REMOVED}binary, "
-    elif [ -e /dev/tty ] && sudo -v < /dev/tty 2>/dev/null; then
-      sudo rm "$dir/tmux-agent-bus" < /dev/tty
-      echo "Removed $dir/tmux-agent-bus"
-      REMOVED="${REMOVED}binary, "
-    else
-      echo "WARNING: cannot remove $dir/tmux-agent-bus (no write access)"
+  for bin in agent-bus tmux-agent-bus; do
+    if [ -x "$dir/$bin" ]; then
+      if [ -w "$dir" ]; then
+        rm "$dir/$bin"
+        echo "Removed $dir/$bin"
+        REMOVED="${REMOVED}binary, "
+      elif [ -e /dev/tty ] && sudo -v < /dev/tty 2>/dev/null; then
+        sudo rm "$dir/$bin" < /dev/tty
+        echo "Removed $dir/$bin"
+        REMOVED="${REMOVED}binary, "
+      else
+        echo "WARNING: cannot remove $dir/$bin (no write access)"
+      fi
     fi
-  fi
+  done
 done
 
 # --- Remove old Node.js version ---
@@ -38,7 +40,7 @@ done
 
 for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
   if [ -f "$rc" ]; then
-    for marker in "# Added by tmux-agent-bus installer" "# Added by agent-bus installer"; do
+    for marker in "# Added by agent-bus installer" "# Added by tmux-agent-bus installer"; do
       if grep -q "$marker" "$rc" 2>/dev/null; then
         # Installer adds 3 lines: blank line, comment, export PATH=...
         if command -v python3 >/dev/null 2>&1; then
@@ -117,8 +119,8 @@ with open(p, 'w') as f:
 remove_mcp_config() {
   config_file="$1"
   client_name="$2"
-  remove_mcp_json "$config_file" "$client_name" "tmux-agent-bus"
   remove_mcp_json "$config_file" "$client_name" "agent-bus"
+  remove_mcp_json "$config_file" "$client_name" "tmux-agent-bus"
 }
 
 echo ""
@@ -126,7 +128,7 @@ echo "Removing MCP client configs..."
 
 # Claude Code (both old and new names)
 if command -v claude >/dev/null 2>&1; then
-  for name in tmux-agent-bus agent-bus; do
+  for name in agent-bus tmux-agent-bus; do
     if claude mcp get "$name" >/dev/null 2>&1; then
       claude mcp remove -s user "$name" 2>/dev/null && {
         echo "  Claude Code: removed \"$name\""
@@ -195,7 +197,7 @@ fi
 
 # Codex (both old and new names)
 if command -v codex >/dev/null 2>&1; then
-  for name in tmux-agent-bus agent-bus; do
+  for name in agent-bus tmux-agent-bus; do
     if codex mcp list 2>/dev/null | grep -q "$name"; then
       codex mcp remove "$name" 2>/dev/null && {
         echo "  Codex: removed \"$name\""
@@ -215,7 +217,7 @@ fi
 
 echo ""
 if [ -z "$REMOVED" ]; then
-  echo "Nothing to uninstall — tmux-agent-bus was not found."
+  echo "Nothing to uninstall — agent-bus was not found."
 else
-  echo "Done! tmux-agent-bus has been fully uninstalled."
+  echo "Done! agent-bus has been fully uninstalled."
 fi
