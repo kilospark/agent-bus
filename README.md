@@ -21,6 +21,12 @@ curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/install.sh
 
 This downloads a single binary, adds it to your PATH, and auto-configures any detected MCP clients (Claude Code, Codex, Claude Desktop, Cursor, etc.).
 
+### Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/uninstall.sh | sh
+```
+
 ## tmux setup
 
 Pane borders are enabled automatically when an agent registers. The server sets `pane-border-status` and `pane-border-format` on the current window if not already configured.
