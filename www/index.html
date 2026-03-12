@@ -679,7 +679,7 @@
         </div>
         <div class="arch-item">
           <div class="arch-key">State</div>
-          <div class="arch-val">One JSON file per channel at <code>~/.agent-bus/channels/&lt;session&gt;.json</code></div>
+          <div class="arch-val">Stored in tmux pane options (<code>@agent-name</code>). No files on disk.</div>
         </div>
         <div class="arch-item">
           <div class="arch-key">Protocol</div>
@@ -687,7 +687,7 @@
         </div>
         <div class="arch-item">
           <div class="arch-key">Cleanup</div>
-          <div class="arch-val">Agents unregister via <code>Drop</code> trait on exit. SIGINT/SIGTERM handled automatically.</div>
+          <div class="arch-val">Agents unregister via Rust <code>Drop</code> trait, which clears the pane option on exit.</div>
         </div>
       </div>
     </div>
