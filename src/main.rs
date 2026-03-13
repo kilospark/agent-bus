@@ -4,6 +4,8 @@ use std::process::Command;
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
+mod mcp_clients;
+
 const TOOLS_JSON: &str = include_str!("../tools.json");
 const MCP_INSTRUCTIONS: &str = include_str!("../MCP_INSTRUCTIONS.md");
 
@@ -479,6 +481,14 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 && matches!(args[1].as_str(), "-v" | "-V" | "--version") {
         println!("{}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+    if args.len() > 1 && args[1] == "setup" {
+        mcp_clients::configure_clients();
+        return;
+    }
+    if args.len() > 1 && args[1] == "uninstall" {
+        mcp_clients::remove_clients();
         return;
     }
 
