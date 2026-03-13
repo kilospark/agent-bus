@@ -134,6 +134,21 @@ fn detect_agent_type() -> String {
             if name == "opencode" || name.starts_with("opencode-") {
                 return "opencode".into();
             }
+            // Node-based CLIs: check full command line for known agent names
+            if name == "node" {
+                if let Ok(args_out) = Command::new("ps").args(["-o", "args=", "-p", &pid.to_string()]).output() {
+                    let args = String::from_utf8_lossy(&args_out.stdout).to_lowercase();
+                    if args.contains("gemini") {
+                        return "gemini".into();
+                    }
+                    if args.contains("opencode") {
+                        return "opencode".into();
+                    }
+                    if args.contains("copilot") {
+                        return "copilot".into();
+                    }
+                }
+            }
         }
         match parent_pid(pid) {
             Some(ppid) if ppid != pid => pid = ppid,
