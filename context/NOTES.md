@@ -1,4 +1,4 @@
-# agent-bus — Development Notes
+# agentbus — Development Notes
 
 ## History
 - Started as Node.js (240 lines), ported to Rust (~300 lines)
@@ -6,6 +6,7 @@
 - First Rust release: v0.1.0
 - v0.1.1: auto-enable pane borders per-window, sudo fallback in install, uninstall.sh
 - v0.2.x: renamed back from "tmux-agent-bus" to "agent-bus", removed history.jsonl logging
+- v0.3.x: renamed from "agent-bus" to "agentbus"
 
 ## Key Design Decisions
 
@@ -58,9 +59,9 @@ context/                # This folder — dev notes
 - **Binary releases**: Push `v*` tag → GitHub Actions builds macOS (arm64/x64) + Linux (x64/arm64)
 - **Release process**: Bump version in Cargo.toml, commit, `git tag v<version> && git push origin v<version>`
 - **Homepage**: Vercel auto-deploys from main, or `vercel --prod` manually
-- **Install**: `curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/install.sh | sh`
-- **Uninstall**: `curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/uninstall.sh | sh`
+- **Install**: `curl -fsSL https://raw.githubusercontent.com/kilospark/agentbus/main/install.sh | sh`
+- **Uninstall**: `curl -fsSL https://raw.githubusercontent.com/kilospark/agentbus/main/uninstall.sh | sh`
 
 ## MCP Server Name
-- Registered as `agent-bus` in all MCP clients
-- Uninstall script cleans up both old names (`tmux-agent-bus`) and current name
+- Registered as `agentbus` in all MCP clients
+- Uninstall script cleans up old names (`agent-bus`, `tmux-agent-bus`) and current name

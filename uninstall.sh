@@ -1,10 +1,10 @@
 #!/bin/sh
 set -e
 
-BINARY="agent-bus"
-OLD_BINS="tmux-agent-bus"
+BINARY="agentbus"
+OLD_BINS="agent-bus tmux-agent-bus"
 
-echo "Uninstalling agent-bus..."
+echo "Uninstalling agentbus..."
 
 REMOVED=""
 
@@ -42,7 +42,7 @@ done
 
 for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
   if [ -f "$rc" ]; then
-    for marker in "# Added by agent-bus installer" "# Added by tmux-agent-bus installer"; do
+    for marker in "# Added by agentbus installer" "# Added by agent-bus installer" "# Added by tmux-agent-bus installer"; do
       if grep -q "$marker" "$rc" 2>/dev/null; then
         sed -i.bak "/$marker/{ N; d; }" "$rc" 2>/dev/null || \
           sed -i '' "/$marker/{ N; d; }" "$rc"
@@ -56,7 +56,7 @@ done
 
 echo ""
 if [ -z "$REMOVED" ]; then
-  echo "Nothing to uninstall — agent-bus was not found."
+  echo "Nothing to uninstall — agentbus was not found."
 else
-  echo "Done! agent-bus has been uninstalled."
+  echo "Done! agentbus has been uninstalled."
 fi

@@ -15,16 +15,16 @@ jobs:
         include:
           - target: aarch64-apple-darwin
             os: macos-latest
-            name: agent-bus-darwin-arm64
+            name: agentbus-darwin-arm64
           - target: x86_64-apple-darwin
             os: macos-latest
-            name: agent-bus-darwin-x64
+            name: agentbus-darwin-x64
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            name: agent-bus-linux-x64
+            name: agentbus-linux-x64
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            name: agent-bus-linux-arm64
+            name: agentbus-linux-arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Package
         run: |
-          cp target/${{ matrix.target }}/release/agent-bus ${{ matrix.name }}
+          cp target/${{ matrix.target }}/release/agentbus ${{ matrix.name }}
           chmod +x ${{ matrix.name }}
           tar czf ${{ matrix.name }}.tar.gz ${{ matrix.name }}
 

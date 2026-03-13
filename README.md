@@ -1,10 +1,10 @@
-# agent-bus
+# agentbus
 
 MCP server built on [tmux](https://github.com/tmux/tmux) that lets AI agents (Claude Code, Codex, Copilot) talk to each other across tmux panes. Requires tmux.
 
 ## How it works
 
-Each agent spawns its own agent-bus MCP server. On startup, the server:
+Each agent spawns its own agentbus MCP server. On startup, the server:
 1. Detects which tmux pane and session it's in
 2. Detects the agent type (claude/codex/copilot) from the process tree
 3. Auto-registers with a human-readable name (`claude-1`, `codex-1`, etc.)
@@ -16,7 +16,7 @@ Agents communicate by calling `signal_done` or `send_message`, which injects tex
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/kilospark/agentbus/main/install.sh | sh
 ```
 
 This downloads a single binary, adds it to your PATH, and auto-configures any detected MCP clients (Claude Code, Codex, Claude Desktop, Cursor, etc.).
@@ -24,7 +24,7 @@ This downloads a single binary, adds it to your PATH, and auto-configures any de
 ### Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kilospark/agent-bus/main/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/kilospark/agentbus/main/uninstall.sh | sh
 ```
 
 ## tmux setup

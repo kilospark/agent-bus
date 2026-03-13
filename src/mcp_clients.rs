@@ -5,14 +5,14 @@ use std::process::{Command, Stdio};
 
 use serde_json::{Value, json};
 
-const SERVER_NAME: &str = "agent-bus";
-const OLD_NAMES: &[&str] = &["tmux-agent-bus"];
+const SERVER_NAME: &str = "agentbus";
+const OLD_NAMES: &[&str] = &["agent-bus", "tmux-agent-bus"];
 
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-/// Add agent-bus to all detected MCP clients.
+/// Add agentbus to all detected MCP clients.
 pub fn configure_clients() {
     let binary_path = match env::current_exe() {
         Ok(p) => p.to_string_lossy().into_owned(),
@@ -98,7 +98,7 @@ pub fn configure_clients() {
 
     println!();
     if any {
-        println!("Done! Restart your MCP client to start using agent-bus.");
+        println!("Done! Restart your MCP client to start using agentbus.");
     } else {
         println!("  No MCP clients detected. Add manually to your client config:");
         println!();
@@ -108,10 +108,10 @@ pub fn configure_clients() {
     }
 }
 
-/// Remove agent-bus from all detected MCP clients.
+/// Remove agentbus from all detected MCP clients.
 pub fn remove_clients() {
     println!();
-    println!("Removing agent-bus from MCP clients...");
+    println!("Removing agentbus from MCP clients...");
 
     let mut any = false;
     let all_names: Vec<&str> = std::iter::once(SERVER_NAME).chain(OLD_NAMES.iter().copied()).collect();
@@ -183,23 +183,25 @@ pub fn remove_clients() {
         println!("  Opencode: {status}");
     }
 
-    // -- Clean up data created by agent-bus --
+    // -- Clean up data directories --
 
     if let Some(home) = dirs::home_dir() {
-        let data_dir = home.join(".agent-bus");
-        if data_dir.is_dir() {
-            if std::fs::remove_dir_all(&data_dir).is_ok() {
-                any = true;
-                println!("  Removed {}", data_dir.display());
+        for dir_name in &[".agentbus", ".agent-bus"] {
+            let data_dir = home.join(dir_name);
+            if data_dir.is_dir() {
+                if std::fs::remove_dir_all(&data_dir).is_ok() {
+                    any = true;
+                    println!("  Removed {}", data_dir.display());
+                }
             }
         }
     }
 
     println!();
     if any {
-        println!("Done! agent-bus has been uninstalled.");
+        println!("Done! agentbus has been uninstalled.");
     } else {
-        println!("  Nothing to uninstall — no agent-bus configs or data found.");
+        println!("  Nothing to uninstall — no agentbus configs or data found.");
     }
 }
 

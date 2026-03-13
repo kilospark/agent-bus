@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-REPO="kilospark/agent-bus"
-BINARY="agent-bus"
+REPO="kilospark/agentbus"
+BINARY="agentbus"
 
 # Default: user-local install. Use --global for /usr/local/bin.
 if [ "$1" = "--global" ] || [ "$INSTALL_DIR" = "/usr/local/bin" ]; then
@@ -62,14 +62,16 @@ chmod +x "${INSTALL_DIR}/${BINARY}"
 
 echo "Installed ${BINARY} to ${INSTALL_DIR}/${BINARY}"
 
-# Clean up old tmux-agent-bus binary if present
+# Clean up old binaries if present
 for dir in /usr/local/bin "$HOME/.local/bin"; do
-  if [ -x "$dir/tmux-agent-bus" ]; then
-    if [ -w "$dir" ]; then
-      rm -f "$dir/tmux-agent-bus"
-      echo "Removed old $dir/tmux-agent-bus (now use: agent-bus)"
+  for old_bin in agent-bus tmux-agent-bus; do
+    if [ -x "$dir/$old_bin" ]; then
+      if [ -w "$dir" ]; then
+        rm -f "$dir/$old_bin"
+        echo "Removed old $dir/$old_bin (now use: agentbus)"
+      fi
     fi
-  fi
+  done
 done
 
 # Auto-add install dir to PATH in shell rc if needed
@@ -89,7 +91,7 @@ case ":$PATH:" in
     if [ -n "$RC_FILE" ]; then
       if ! grep -q "${INSTALL_DIR}" "$RC_FILE" 2>/dev/null; then
         echo "" >> "$RC_FILE"
-        echo "# Added by agent-bus installer" >> "$RC_FILE"
+        echo "# Added by agentbus installer" >> "$RC_FILE"
         echo "$PATH_LINE" >> "$RC_FILE"
         echo "Added ${INSTALL_DIR} to PATH in ${RC_FILE}"
       fi

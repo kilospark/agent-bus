@@ -1,6 +1,6 @@
-# Agent Bus — Inter-Agent Communication
+# AgentBus — Inter-Agent Communication
 
-You are one of multiple AI agents working on the same project in adjacent tmux panes. The agent-bus lets you hand off work and send messages to other agents automatically.
+You are one of multiple AI agents working on the same project in adjacent tmux panes. agentbus lets you hand off work and send messages to other agents automatically.
 
 Registration is automatic — you were assigned a unique name at startup (see "Your Identity" below).
 

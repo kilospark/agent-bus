@@ -233,7 +233,7 @@ fn send_to_pane(pane: &str, message: &str) -> Result<bool> {
     }
 
     // Retry once
-    eprintln!("agent-bus: first send to {pane} got no ack, retrying...");
+    eprintln!("agentbus: first send to {pane} got no ack, retrying...");
     try_send(pane, &sanitized)
 }
 
@@ -252,7 +252,7 @@ impl AgentState {
                 .args(["set-option", "-pu", "-t", pane, "@agent-name"])
                 .status();
             if let Some(name) = &self.name {
-                eprintln!("agent-bus: unregistered \"{name}\"");
+                eprintln!("agentbus: unregistered \"{name}\"");
             }
         }
         self.name = None;
@@ -299,7 +299,7 @@ impl AgentState {
             .args(["set-option", "-p", "-t", &pane, "@agent-name", &name])
             .status();
 
-        eprintln!("agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
+        eprintln!("agentbus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
         self.name = Some(name);
     }
 }
@@ -550,7 +550,7 @@ fn run_server(state: &mut AgentState) -> Result<()> {
                         "protocolVersion": client_protocol,
                         "capabilities": { "tools": {} },
                         "serverInfo": {
-                            "name": "agent-bus",
+                            "name": "agentbus",
                             "version": env!("CARGO_PKG_VERSION")
                         },
                         "instructions": instructions
