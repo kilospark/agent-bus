@@ -183,11 +183,23 @@ pub fn remove_clients() {
         println!("  Opencode: {status}");
     }
 
+    // -- Clean up data created by agent-bus --
+
+    if let Some(home) = dirs::home_dir() {
+        let data_dir = home.join(".agent-bus");
+        if data_dir.is_dir() {
+            if std::fs::remove_dir_all(&data_dir).is_ok() {
+                any = true;
+                println!("  Removed {}", data_dir.display());
+            }
+        }
+    }
+
     println!();
     if any {
-        println!("Done! agent-bus has been removed from MCP clients.");
+        println!("Done! agent-bus has been uninstalled.");
     } else {
-        println!("  No MCP client configs found with agent-bus.");
+        println!("  Nothing to uninstall — no agent-bus configs or data found.");
     }
 }
 

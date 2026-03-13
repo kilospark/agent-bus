@@ -4,9 +4,13 @@ set -e
 REPO="kilospark/agent-bus"
 BINARY="agent-bus"
 
-# Use INSTALL_DIR if set, otherwise default to /usr/local/bin
-if [ -z "$INSTALL_DIR" ]; then
+# Default: user-local install. Use --global for /usr/local/bin.
+if [ "$1" = "--global" ] || [ "$INSTALL_DIR" = "/usr/local/bin" ]; then
   INSTALL_DIR="/usr/local/bin"
+elif [ -n "$INSTALL_DIR" ]; then
+  : # custom INSTALL_DIR from env
+else
+  INSTALL_DIR="$HOME/.local/bin"
 fi
 
 # Detect OS and architecture
@@ -50,13 +54,8 @@ mkdir -p "$INSTALL_DIR"
 
 if [ -w "$INSTALL_DIR" ]; then
   mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}"
-elif [ -e /dev/tty ] && sudo -v < /dev/tty 2>/dev/null; then
-  sudo mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}" < /dev/tty
 else
-  INSTALL_DIR="$HOME/.local/bin"
-  mkdir -p "$INSTALL_DIR"
-  mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}"
-  echo "No admin access — installing to ${INSTALL_DIR} instead."
+  sudo mv "$TMPDIR/${ASSET}" "${INSTALL_DIR}/${BINARY}"
 fi
 
 chmod +x "${INSTALL_DIR}/${BINARY}"
@@ -69,28 +68,6 @@ for dir in /usr/local/bin "$HOME/.local/bin"; do
     if [ -w "$dir" ]; then
       rm -f "$dir/tmux-agent-bus"
       echo "Removed old $dir/tmux-agent-bus (now use: agent-bus)"
-    elif sudo -n true 2>/dev/null; then
-      sudo rm -f "$dir/tmux-agent-bus"
-      echo "Removed old $dir/tmux-agent-bus (now use: agent-bus)"
-    else
-      echo "WARNING: old $dir/tmux-agent-bus still exists (remove manually)"
-    fi
-  fi
-done
-
-# Update stale copies in other known locations
-for other_dir in /usr/local/bin "$HOME/.local/bin"; do
-  if [ "$other_dir" != "$INSTALL_DIR" ]; then
-    if [ -x "$other_dir/${BINARY}" ]; then
-      if [ -w "$other_dir" ]; then
-        cp "${INSTALL_DIR}/${BINARY}" "$other_dir/${BINARY}"
-        echo "Updated stale copy at ${other_dir}/${BINARY}"
-      elif sudo -n true 2>/dev/null; then
-        sudo cp "${INSTALL_DIR}/${BINARY}" "$other_dir/${BINARY}"
-        echo "Updated stale copy at ${other_dir}/${BINARY}"
-      else
-        echo "WARNING: stale copy at ${other_dir}/${BINARY} (update manually or remove)"
-      fi
     fi
   fi
 done
@@ -100,7 +77,6 @@ case ":$PATH:" in
   *":${INSTALL_DIR}:"*) ;;
   *)
     PATH_LINE="export PATH=\"${INSTALL_DIR}:\$PATH\""
-    # Detect shell rc file
     if [ -f "$HOME/.zshrc" ]; then
       RC_FILE="$HOME/.zshrc"
     elif [ -f "$HOME/.bashrc" ]; then
@@ -121,236 +97,9 @@ case ":$PATH:" in
       echo "WARNING: ${INSTALL_DIR} is not in your PATH. Add it with:"
       echo "  $PATH_LINE"
     fi
-    # Also update current session
     export PATH="${INSTALL_DIR}:$PATH"
     ;;
 esac
 
-# --- Configure MCP clients ---
-
-BINARY_PATH="${INSTALL_DIR}/${BINARY}"
-CONFIGURED=""
-
-# Add agent-bus to an MCP config file
-# Usage: add_mcp_config <config_file> <client_name>
-add_mcp_config() {
-  config_file="$1"
-  client_name="$2"
-  create_if_missing="${3:-false}"
-
-  if [ ! -f "$config_file" ]; then
-    if [ "$create_if_missing" = "true" ]; then
-      mkdir -p "$(dirname "$config_file")"
-      echo '{}' > "$config_file"
-    else
-      return 0
-    fi
-  fi
-
-  # Migrate old tmux-agent-bus entry if present
-  if grep -q '"tmux-agent-bus"' "$config_file" 2>/dev/null; then
-    if command -v python3 >/dev/null 2>&1; then
-      python3 -c "
-import json, re, sys
-p = sys.argv[1]
-with open(p) as f:
-    raw = f.read()
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError:
-    data = json.loads(re.sub(r',(\s*[}\]])', r'\1', raw))
-if 'mcpServers' in data:
-    data['mcpServers'].pop('tmux-agent-bus', None)
-with open(p, 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
-" "$config_file" 2>/dev/null && echo "  $client_name: migrated from tmux-agent-bus"
-    fi
-  fi
-
-  # Check if agent-bus is already configured
-  if grep -q '"agent-bus"' "$config_file" 2>/dev/null; then
-    echo "  $client_name: already configured"
-    CONFIGURED="${CONFIGURED}${client_name}, "
-    return
-  fi
-
-  if command -v python3 >/dev/null 2>&1; then
-    if python3 -c "
-import json, re, sys
-p, cmd = sys.argv[1], sys.argv[2]
-with open(p) as f:
-    raw = f.read()
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError:
-    data = json.loads(re.sub(r',(\s*[}\]])', r'\1', raw))
-data.setdefault('mcpServers', {})['agent-bus'] = {'command': cmd, 'args': []}
-with open(p, 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
-" "$config_file" "$BINARY_PATH" 2>/dev/null; then
-      echo "  $client_name: configured"
-      CONFIGURED="${CONFIGURED}${client_name}, "
-      return
-    fi
-  fi
-
-  # Fallback: sed-based insertion (works for well-formed single-line JSON)
-  content="$(cat "$config_file")"
-  escaped_path="$(echo "$BINARY_PATH" | sed 's/[\/&]/\\&/g')"
-
-  if echo "$content" | grep -q '"mcpServers"'; then
-    updated="$(echo "$content" | sed 's/"mcpServers"[[:space:]]*:[[:space:]]*{/"mcpServers": { "agent-bus": { "command": "'"$escaped_path"'", "args": [] },/')"
-  else
-    updated="$(echo "$content" | sed 's/^{/{ "mcpServers": { "agent-bus": { "command": "'"$escaped_path"'", "args": [] } },/')"
-  fi
-
-  echo "$updated" > "$config_file"
-  echo "  $client_name: configured"
-  CONFIGURED="${CONFIGURED}${client_name}, "
-}
-
-echo ""
-echo "Configuring MCP clients..."
-
-# Claude Code (uses CLI, not a config file)
-if command -v claude >/dev/null 2>&1; then
-  # Migrate old name
-  if claude mcp get tmux-agent-bus >/dev/null 2>&1; then
-    claude mcp remove tmux-agent-bus 2>/dev/null
-    echo "  Claude Code: removed old tmux-agent-bus"
-  fi
-  if claude mcp get agent-bus >/dev/null 2>&1; then
-    echo "  Claude Code: already configured"
-    CONFIGURED="${CONFIGURED}Claude Code, "
-  else
-    claude mcp add -s user agent-bus "$BINARY_PATH" 2>/dev/null && {
-      echo "  Claude Code: configured"
-      CONFIGURED="${CONFIGURED}Claude Code, "
-    } || echo "  Claude Code: failed to configure (try: claude mcp add -s user agent-bus $BINARY_PATH)"
-  fi
-fi
-
-# Cline (VSCode extension - check both Code and Cursor hosts)
-if [ "$PLATFORM" = "darwin" ]; then
-  add_mcp_config "$HOME/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json" "Cline (VSCode)"
-  add_mcp_config "$HOME/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json" "Cline (Cursor)"
-elif [ "$PLATFORM" = "linux" ]; then
-  XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
-  add_mcp_config "$XDG_CONFIG/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json" "Cline (VSCode)"
-  add_mcp_config "$XDG_CONFIG/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json" "Cline (Cursor)"
-fi
-
-# macOS config paths
-if [ "$PLATFORM" = "darwin" ]; then
-  APP_SUPPORT="$HOME/Library/Application Support"
-
-  add_mcp_config "$APP_SUPPORT/Claude/claude_desktop_config.json" "Claude Desktop"
-  add_mcp_config "$APP_SUPPORT/ChatGPT/mcp.json" "ChatGPT Desktop"
-
-  # Cursor / Cursor Agent (both read ~/.cursor/mcp.json)
-  # Create config if agent CLI is installed even without Cursor IDE
-  if command -v agent >/dev/null 2>&1; then
-    add_mcp_config "$HOME/.cursor/mcp.json" "Cursor / Agent" true
-  else
-    add_mcp_config "$HOME/.cursor/mcp.json" "Cursor"
-  fi
-
-  # Windsurf
-  add_mcp_config "$HOME/.codeium/windsurf/mcp_config.json" "Windsurf"
-fi
-
-# Linux config paths
-if [ "$PLATFORM" = "linux" ]; then
-  XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
-
-  add_mcp_config "$XDG_CONFIG/Claude/claude_desktop_config.json" "Claude Desktop"
-  add_mcp_config "$XDG_CONFIG/chatgpt/mcp.json" "ChatGPT Desktop"
-
-  # Cursor / Cursor Agent
-  if command -v agent >/dev/null 2>&1; then
-    add_mcp_config "$HOME/.cursor/mcp.json" "Cursor / Agent" true
-  else
-    add_mcp_config "$HOME/.cursor/mcp.json" "Cursor"
-  fi
-
-  # Windsurf
-  add_mcp_config "$HOME/.codeium/windsurf/mcp_config.json" "Windsurf"
-fi
-
-# Codex (uses CLI, not a config file)
-if command -v codex >/dev/null 2>&1; then
-  # Migrate old name
-  if codex mcp list 2>/dev/null | grep -q 'tmux-agent-bus'; then
-    codex mcp remove tmux-agent-bus 2>/dev/null
-    echo "  Codex: removed old tmux-agent-bus"
-  fi
-  if codex mcp list 2>/dev/null | grep -q 'agent-bus'; then
-    echo "  Codex: already configured"
-    CONFIGURED="${CONFIGURED}Codex, "
-  else
-    codex mcp add agent-bus -- "$BINARY_PATH" 2>/dev/null && {
-      echo "  Codex: configured"
-      CONFIGURED="${CONFIGURED}Codex, "
-    } || echo "  Codex: failed to configure (try: codex mcp add agent-bus -- $BINARY_PATH)"
-  fi
-fi
-
-# Copilot CLI (uses ~/.copilot/mcp-config.json with standard mcpServers format)
-if command -v copilot >/dev/null 2>&1; then
-  add_mcp_config "$HOME/.copilot/mcp-config.json" "Copilot CLI" true
-fi
-
-# Opencode (uses different config format: "mcp" key, type "local", command as array)
-if command -v opencode >/dev/null 2>&1; then
-  OPENCODE_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/config.json"
-  if [ -f "$OPENCODE_CONFIG" ] && grep -q '"agent-bus"' "$OPENCODE_CONFIG" 2>/dev/null; then
-    echo "  Opencode: already configured"
-    CONFIGURED="${CONFIGURED}Opencode, "
-  elif command -v python3 >/dev/null 2>&1; then
-    if [ ! -f "$OPENCODE_CONFIG" ]; then
-      mkdir -p "$(dirname "$OPENCODE_CONFIG")"
-      echo '{}' > "$OPENCODE_CONFIG"
-    fi
-    python3 -c "
-import json, re, sys
-p, cmd = sys.argv[1], sys.argv[2]
-with open(p) as f:
-    raw = f.read()
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError:
-    data = json.loads(re.sub(r',(\s*[}\]])', r'\1', raw))
-data.setdefault('mcp', {})['agent-bus'] = {'type': 'local', 'command': [cmd]}
-with open(p, 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
-" "$OPENCODE_CONFIG" "$BINARY_PATH" 2>/dev/null && {
-      echo "  Opencode: configured"
-      CONFIGURED="${CONFIGURED}Opencode, "
-    } || echo "  Opencode: failed to configure (add manually to $OPENCODE_CONFIG)"
-  fi
-fi
-
-# Gemini CLI (uses CLI, not a config file)
-if command -v gemini >/dev/null 2>&1; then
-  if gemini mcp list 2>/dev/null | grep -q 'agent-bus'; then
-    echo "  Gemini CLI: already configured"
-    CONFIGURED="${CONFIGURED}Gemini CLI, "
-  else
-    gemini mcp add -s user agent-bus "$BINARY_PATH" 2>/dev/null && {
-      echo "  Gemini CLI: configured"
-      CONFIGURED="${CONFIGURED}Gemini CLI, "
-    } || echo "  Gemini CLI: failed to configure (try: gemini mcp add -s user agent-bus $BINARY_PATH)"
-  fi
-fi
-
-if [ -z "$CONFIGURED" ]; then
-  echo "  No MCP clients detected. Add manually to your client config:"
-  echo ""
-  echo '  { "mcpServers": { "agent-bus": { "command": "'"$BINARY_PATH"'", "args": [] } } }'
-else
-  echo ""
-  echo "Done! Restart your MCP client to start using agent-bus."
-fi
+# Configure MCP clients (handled natively by the binary)
+"${INSTALL_DIR}/${BINARY}" setup
