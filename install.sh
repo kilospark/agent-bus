@@ -185,7 +185,7 @@ try:
     data = json.loads(raw)
 except json.JSONDecodeError:
     data = json.loads(re.sub(r',(\s*[}\]])', r'\1', raw))
-data.setdefault('mcpServers', {})['agent-bus'] = {'command': cmd}
+data.setdefault('mcpServers', {})['agent-bus'] = {'command': cmd, 'args': []}
 with open(p, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
@@ -201,9 +201,9 @@ with open(p, 'w') as f:
   escaped_path="$(echo "$BINARY_PATH" | sed 's/[\/&]/\\&/g')"
 
   if echo "$content" | grep -q '"mcpServers"'; then
-    updated="$(echo "$content" | sed 's/"mcpServers"[[:space:]]*:[[:space:]]*{/"mcpServers": { "agent-bus": { "command": "'"$escaped_path"'" },/')"
+    updated="$(echo "$content" | sed 's/"mcpServers"[[:space:]]*:[[:space:]]*{/"mcpServers": { "agent-bus": { "command": "'"$escaped_path"'", "args": [] },/')"
   else
-    updated="$(echo "$content" | sed 's/^{/{ "mcpServers": { "agent-bus": { "command": "'"$escaped_path"'" } },/')"
+    updated="$(echo "$content" | sed 's/^{/{ "mcpServers": { "agent-bus": { "command": "'"$escaped_path"'", "args": [] } },/')"
   fi
 
   echo "$updated" > "$config_file"
@@ -349,7 +349,7 @@ fi
 if [ -z "$CONFIGURED" ]; then
   echo "  No MCP clients detected. Add manually to your client config:"
   echo ""
-  echo '  { "mcpServers": { "agent-bus": { "command": "'"$BINARY_PATH"'" } } }'
+  echo '  { "mcpServers": { "agent-bus": { "command": "'"$BINARY_PATH"'", "args": [] } } }'
 else
   echo ""
   echo "Done! Restart your MCP client to start using agent-bus."
