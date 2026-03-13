@@ -47,5 +47,28 @@
       },
       "required": ["to", "message"]
     }
+  },
+  {
+    "name": "unregister",
+    "description": "Unregister from the bus. You will no longer appear in `who` or receive messages. Use before re-registering with a different name.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "register",
+    "description": "Re-register on the bus. Auto-detects agent type and picks a unique name, or use `name` to choose your own. Useful after unregister or to change your name.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Custom name to register as (optional — auto-generated if omitted)"
+        }
+      },
+      "required": []
+    }
   }
 ]

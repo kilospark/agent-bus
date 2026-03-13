@@ -169,6 +169,12 @@ fn capture_pane(pane: &str) -> String {
 fn try_send(pane: &str, sanitized: &str) -> Result<bool> {
     let before = capture_pane(pane);
 
+    // Send Escape first to exit shell mode (no-op if already in normal mode)
+    let _ = Command::new("tmux")
+        .args(["send-keys", "-t", pane, "Escape"])
+        .status();
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
     // Send text first, then Enter separately after a short delay so the
     // target has time to process the content before submission.
     let status = Command::new("tmux")
@@ -222,10 +228,9 @@ struct AgentState {
     channel: Option<String>,
 }
 
-impl Drop for AgentState {
-    fn drop(&mut self) {
+impl AgentState {
+    fn unregister(&mut self) {
         if let Some(pane) = &self.pane {
-            // Clear pane option on exit
             let _ = Command::new("tmux")
                 .args(["set-option", "-pu", "-t", pane, "@agent-name"])
                 .status();
@@ -233,63 +238,84 @@ impl Drop for AgentState {
                 eprintln!("agent-bus: unregistered \"{name}\"");
             }
         }
+        self.name = None;
+    }
+
+    fn do_register(&mut self, custom_name: Option<&str>) {
+        // Unregister first if already registered
+        if self.name.is_some() {
+            self.unregister();
+        }
+
+        let (pane, session) = match (&self.pane, &self.channel) {
+            (Some(p), Some(s)) => (p.clone(), s.clone()),
+            _ => match detect_pane() {
+                Some((p, s)) => {
+                    self.pane = Some(p.clone());
+                    self.channel = Some(s.clone());
+                    (p, s)
+                }
+                None => return,
+            },
+        };
+
+        let name = if let Some(custom) = custom_name {
+            custom.to_string()
+        } else {
+            let agent_type = detect_agent_type();
+            let existing_names: std::collections::HashSet<String> = list_agents()
+                .into_iter()
+                .filter(|a| a.session == session)
+                .map(|a| a.name)
+                .collect();
+            let mut n = 1u32;
+            loop {
+                let candidate = format!("{agent_type}-{n}");
+                if !existing_names.contains(&candidate) {
+                    break candidate;
+                }
+                n += 1;
+            }
+        };
+
+        let _ = Command::new("tmux")
+            .args(["set-option", "-p", "-t", &pane, "@agent-name", &name])
+            .status();
+
+        eprintln!("agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
+        self.name = Some(name);
+    }
+}
+
+impl Drop for AgentState {
+    fn drop(&mut self) {
+        self.unregister();
     }
 }
 
 fn register() -> AgentState {
-    let (pane, session) = match detect_pane() {
-        Some(v) => v,
-        None => {
-            return AgentState { name: None, pane: None, channel: None };
-        }
-    };
-
-    let agent_type = detect_agent_type();
-
-    // Check existing agent names across this session to pick a unique name
-    let existing_names: std::collections::HashSet<String> = list_agents()
-        .into_iter()
-        .filter(|a| a.session == session)
-        .map(|a| a.name)
-        .collect();
-
-    let mut n = 1u32;
-    let name = loop {
-        let candidate = format!("{agent_type}-{n}");
-        if !existing_names.contains(&candidate) {
-            break candidate;
-        }
-        n += 1;
-    };
-
-    // Set pane option — this IS the registration. No JSON file needed.
-    let _ = Command::new("tmux")
-        .args(["set-option", "-p", "-t", &pane, "@agent-name", &name])
-        .status();
+    let mut state = AgentState { name: None, pane: None, channel: None };
+    state.do_register(None);
 
     // Enable pane borders for this window if not already on
-    let border_status = Command::new("tmux")
-        .args(["show-option", "-wv", "-t", &pane, "pane-border-status"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .unwrap_or_default();
-    if border_status.trim().is_empty() || border_status.trim() == "off" {
-        let _ = Command::new("tmux")
-            .args(["set-option", "-w", "-t", &pane, "pane-border-format", " #{@agent-name} | #{pane_title} "])
-            .status();
-        let _ = Command::new("tmux")
-            .args(["set-option", "-w", "-t", &pane, "pane-border-status", "top"])
-            .status();
+    if let Some(pane) = &state.pane {
+        let border_status = Command::new("tmux")
+            .args(["show-option", "-wv", "-t", pane, "pane-border-status"])
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .unwrap_or_default();
+        if border_status.trim().is_empty() || border_status.trim() == "off" {
+            let _ = Command::new("tmux")
+                .args(["set-option", "-w", "-t", pane, "pane-border-format", " #{@agent-name} | #{pane_title} "])
+                .status();
+            let _ = Command::new("tmux")
+                .args(["set-option", "-w", "-t", pane, "pane-border-status", "top"])
+                .status();
+        }
     }
 
-    eprintln!("agent-bus: registered as \"{name}\" on channel \"{session}\" (pane {pane})");
-
-    AgentState {
-        name: Some(name),
-        pane: Some(pane),
-        channel: Some(session),
-    }
+    state
 }
 
 // --- Tool handlers ---
@@ -441,15 +467,15 @@ fn main() {
         return;
     }
 
-    let state = register();
+    let mut state = register();
 
-    if let Err(e) = run_server(&state) {
+    if let Err(e) = run_server(&mut state) {
         eprintln!("Fatal: {e:#}");
     }
     // state drops here -> unregister runs
 }
 
-fn run_server(state: &AgentState) -> Result<()> {
+fn run_server(state: &mut AgentState) -> Result<()> {
     let stdin = io::stdin();
     let stdout = io::stdout();
 
@@ -530,6 +556,23 @@ fn run_server(state: &AgentState) -> Result<()> {
                     "who" => handle_who(state),
                     "signal_done" => handle_signal_done(state, &arguments),
                     "send_message" => handle_send_message(state, &arguments),
+                    "unregister" => {
+                        if state.name.is_none() {
+                            err_result("Not registered.")
+                        } else {
+                            let old_name = state.name.clone().unwrap_or_default();
+                            state.unregister();
+                            ok_result(&format!("Unregistered \"{old_name}\". You are now off the bus."))
+                        }
+                    }
+                    "register" => {
+                        let custom_name = arguments.get("name").and_then(Value::as_str);
+                        state.do_register(custom_name);
+                        match &state.name {
+                            Some(name) => ok_result(&format!("Registered as \"{name}\" on channel \"{}\".", state.channel.as_deref().unwrap_or("unknown"))),
+                            None => err_result("Registration failed — not running inside tmux."),
+                        }
+                    }
                     _ => err_result(&format!("Unknown tool: {tool_name}")),
                 };
 
