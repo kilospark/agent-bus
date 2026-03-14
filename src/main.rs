@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
 mod mcp_clients;
+mod update;
 
 const TOOLS_JSON: &str = include_str!("../tools.json");
 const MCP_INSTRUCTIONS: &str = include_str!("../MCP_INSTRUCTIONS.md");
@@ -494,6 +495,7 @@ fn main() {
                 println!("  (none)      Start MCP server (default)");
                 println!("  install     Configure all detected MCP clients");
                 println!("  uninstall   Remove from all MCP clients and clean up");
+                println!("  update      Check for updates and self-update");
                 println!();
                 println!("Options:");
                 println!("  -v, --version   Print version");
@@ -506,6 +508,30 @@ fn main() {
             }
             "uninstall" => {
                 mcp_clients::remove_clients();
+                return;
+            }
+            "update" => {
+                let current = env!("CARGO_PKG_VERSION");
+                println!("Current version: {current}");
+                println!("Checking for updates...");
+                match update::check_for_update() {
+                    Ok(Some(latest)) => {
+                        println!("Update available: v{latest}");
+                        println!("Downloading...");
+                        match update::self_update(&latest) {
+                            Ok(_) => println!("Updated to v{latest}. Restart agentbus to use the new version."),
+                            Err(e) => {
+                                eprintln!("Update failed: {e}");
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                    Ok(None) => println!("Already up to date (v{current})."),
+                    Err(e) => {
+                        eprintln!("Failed to check for updates: {e}");
+                        std::process::exit(1);
+                    }
+                }
                 return;
             }
             _ => {}
@@ -563,6 +589,25 @@ fn run_server(state: &mut AgentState) -> Result<()> {
                     .pointer("/params/protocolVersion")
                     .and_then(Value::as_str)
                     .unwrap_or("2024-11-05");
+
+                // Background auto-update check+download (throttled to once per 24h).
+                // Entire flow runs in a background thread to avoid blocking initialize.
+                if update::should_check_for_update() {
+                    std::thread::spawn(|| {
+                        match update::check_for_update() {
+                            Ok(Some(latest)) => {
+                                if let Err(e) = update::self_update(&latest) {
+                                    eprintln!("Auto-update failed: {e}");
+                                } else {
+                                    eprintln!("Auto-updated to v{latest}. Restart MCP client to use.");
+                                }
+                            }
+                            Ok(None) => {}
+                            Err(e) => eprintln!("Update check failed: {e}"),
+                        }
+                    });
+                }
+
                 let response = json!({
                     "jsonrpc": "2.0",
                     "id": id,

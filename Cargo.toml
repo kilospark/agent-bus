@@ -1,9 +1,12 @@
 [package]
 name = "agentbus"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 
 [dependencies]
 serde_json = "1"
 anyhow = "1"
 dirs = "6.0.0"
+ureq = "2"
+flate2 = "1.1"
+tar = "0.4"
