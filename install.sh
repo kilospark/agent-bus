@@ -3,6 +3,7 @@ set -e
 
 REPO="kilospark/agentbus"
 BINARY="agentbus"
+DOMAIN="agentbus.site"
 
 # Default: user-local install. Use --global for /usr/local/bin.
 if [ "$1" = "--global" ] || [ "$INSTALL_DIR" = "/usr/local/bin" ]; then
@@ -41,7 +42,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-URL="https://agentbus.site/download/${VERSION}/${ASSET}.tar.gz"
+URL="https://${DOMAIN}/download/${VERSION}/${ASSET}.tar.gz"
 
 echo "Installing ${BINARY} ${VERSION} (${PLATFORM}/${ARCH_NAME})..."
 
@@ -68,7 +69,7 @@ for dir in /usr/local/bin "$HOME/.local/bin"; do
     if [ -x "$dir/$old_bin" ]; then
       if [ -w "$dir" ]; then
         rm -f "$dir/$old_bin"
-        echo "Removed old $dir/$old_bin (now use: agentbus)"
+        echo "Removed old $dir/$old_bin (now use: ${BINARY})"
       fi
     fi
   done
@@ -91,7 +92,7 @@ case ":$PATH:" in
     if [ -n "$RC_FILE" ]; then
       if ! grep -q "${INSTALL_DIR}" "$RC_FILE" 2>/dev/null; then
         echo "" >> "$RC_FILE"
-        echo "# Added by agentbus installer" >> "$RC_FILE"
+        echo "# Added by ${BINARY} installer" >> "$RC_FILE"
         echo "$PATH_LINE" >> "$RC_FILE"
         echo "Added ${INSTALL_DIR} to PATH in ${RC_FILE}"
       fi
