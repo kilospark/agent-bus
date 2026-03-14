@@ -104,4 +104,4 @@ case ":$PATH:" in
 esac
 
 # Configure MCP clients (handled natively by the binary)
-"${INSTALL_DIR}/${BINARY}" setup
+"${INSTALL_DIR}/${BINARY}" install

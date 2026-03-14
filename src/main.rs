@@ -479,17 +479,37 @@ fn write_response(stdout: &io::Stdout, response: &Value) -> Result<()> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() > 1 && matches!(args[1].as_str(), "-v" | "-V" | "--version") {
-        println!("{}", env!("CARGO_PKG_VERSION"));
-        return;
-    }
-    if args.len() > 1 && args[1] == "setup" {
-        mcp_clients::configure_clients();
-        return;
-    }
-    if args.len() > 1 && args[1] == "uninstall" {
-        mcp_clients::remove_clients();
-        return;
+    if args.len() > 1 {
+        match args[1].as_str() {
+            "-v" | "-V" | "--version" => {
+                println!("{}", env!("CARGO_PKG_VERSION"));
+                return;
+            }
+            "-h" | "--help" | "help" => {
+                println!("agentbus {} — inter-agent communication over tmux", env!("CARGO_PKG_VERSION"));
+                println!();
+                println!("Usage: agentbus [command]");
+                println!();
+                println!("Commands:");
+                println!("  (none)      Start MCP server (default)");
+                println!("  install     Configure all detected MCP clients");
+                println!("  uninstall   Remove from all MCP clients and clean up");
+                println!();
+                println!("Options:");
+                println!("  -v, --version   Print version");
+                println!("  -h, --help      Print this help");
+                return;
+            }
+            "install" | "setup" => {
+                mcp_clients::configure_clients();
+                return;
+            }
+            "uninstall" => {
+                mcp_clients::remove_clients();
+                return;
+            }
+            _ => {}
+        }
     }
 
     let mut state = register();
