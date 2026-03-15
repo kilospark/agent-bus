@@ -354,12 +354,8 @@ fn capture_pane(pane: &str) -> String {
 fn try_send(pane: &str, sanitized: &str) -> Result<bool> {
     let before = capture_pane(pane);
 
-    // Use tmux paste-buffer instead of send-keys for better compatibility
-    // with Node-based CLIs (Claude Code, Gemini, Codex) that use custom
-    // input handlers. Paste works like Cmd+V which these apps handle correctly.
-    let text_with_newline = format!("{sanitized}\n");
-
-    // Load text into tmux buffer
+    // Paste text via tmux paste-buffer (handles special chars better than send-keys),
+    // then send Enter via send-keys (some CLIs don't submit on pasted newlines).
     let mut child = Command::new("tmux")
         .args(["load-buffer", "-"])
         .stdin(std::process::Stdio::piped())
@@ -367,14 +363,13 @@ fn try_send(pane: &str, sanitized: &str) -> Result<bool> {
         .context("failed to run tmux load-buffer")?;
     if let Some(mut stdin) = child.stdin.take() {
         use std::io::Write;
-        let _ = stdin.write_all(text_with_newline.as_bytes());
+        let _ = stdin.write_all(sanitized.as_bytes());
     }
     let status = child.wait().context("tmux load-buffer failed")?;
     if !status.success() {
         anyhow::bail!("tmux load-buffer failed");
     }
 
-    // Paste buffer into target pane
     let status = Command::new("tmux")
         .args(["paste-buffer", "-t", pane])
         .status()
@@ -382,6 +377,13 @@ fn try_send(pane: &str, sanitized: &str) -> Result<bool> {
     if !status.success() {
         anyhow::bail!("tmux paste-buffer failed");
     }
+
+    std::thread::sleep(std::time::Duration::from_millis(200));
+
+    // Send Enter separately — pasted newlines don't always trigger submission
+    let _ = Command::new("tmux")
+        .args(["send-keys", "-t", pane, "Enter"])
+        .status();
 
     // Poll for ack: wait for pane to show the message was processed
     for _ in 0..8 {
